@@ -159,6 +159,8 @@
 
     </div>
 
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
     <script>
         // State Management
         let vacuumState = {
@@ -198,9 +200,52 @@
             }, 5000);
         }
 
+        // Fungsi untuk mengirim data daya hisap ke database
+        function sendPowerModeToDatabase(mode, value) {
+            $.ajaxSetup({
+                headers: {
+                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                }
+            });
+
+            $.ajax({
+                url: "{{ route('dayahisap.store') }}", 
+                type: 'POST',
+                dataType: 'json',
+                data: {
+                    power_mode: mode,
+                    value: value
+                },
+                success: function(response) {
+                    console.log('Data berhasil dikirim:', response);
+                    // Tampilkan notifikasi berhasil
+                    showNotification('success', 'Data daya hisap berhasil disimpan');
+                },
+                error: function(xhr, status, error) {
+                    console.error('Error:', error);
+                    console.error('Response:', xhr.responseText);
+                    showNotification('error', 'Gagal mengirim data');
+                }
+            });
+        }
+
+
+        // Update fungsi setPowerMode untuk mengirim ke database
         function setPowerMode(mode) {
             vacuumState.powerMode = mode;
             updateUI();
+            
+            // Tentukan nilai berdasarkan mode
+            const powerValues = {
+                'eco': 150,
+                'normal': 200,
+                'strong': 255
+            };
+            
+            const value = powerValues[mode];
+            
+            // Kirim ke database
+            sendPowerModeToDatabase(mode, value);
             
             const modeInfo = {
                 'eco': 'Hemat Energi - Daya rendah untuk pembersihan ringan',
