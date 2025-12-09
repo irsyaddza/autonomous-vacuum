@@ -11,16 +11,179 @@ void ApiClient::connectWiFi() {
     WiFiManager wm;
     
     // UI Customization
-    const char* custom_css = 
-    "<style>"
-    "body { background-color: #1a1a1a; color: #e0e0e0; font-family: 'Segoe UI', sans-serif; }"
-    "h1 { color: #4e73df; font-weight: bold; text-transform: uppercase; }"
-    "button { background-color: #4e73df !important; border-radius: 25px !important; color: white !important; }"
-    "input { background-color: #2d2d2d; color: white; border: 1px solid #444; border-radius: 5px; padding: 8px; }"
-    "div { background-color: #2d2d2d; border-radius: 10px; padding: 10px; margin-bottom: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }"
-    "a { color: #17a2b8; text-decoration: none; }"
-    ".wrap { max-width: 400px; margin: 0 auto; padding: 20px; }"
-    "</style>";
+    // UI Customization - Premium Animated Dark Theme
+    const char* custom_css = R"(
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;500;700&display=swap');
+        
+        :root {
+            --primary: #4e73df;
+            --secondary: #8e44ad;
+            --bg-dark: #0f172a;
+            --glass: rgba(255, 255, 255, 0.05);
+            --border: rgba(255, 255, 255, 0.1);
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: #e0e0e0;
+            font-family: 'Outfit', 'Segoe UI', sans-serif;
+            margin: 0;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(-45deg, #0f172a, #1e293b, #250838, #0f172a);
+            background-size: 400% 400%;
+            animation: gradientBG 15s ease infinite;
+        }
+
+        @keyframes gradientBG {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        /* Container Limit for WiFiManager default layout */
+        div, form { width: 100%; }
+
+        /* Main Card */
+        .wrap {
+            background: var(--glass);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 40px 30px;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+            max-width: 400px;
+            width: 90%;
+            margin: 20px auto;
+            animation: fadeIn 0.8s ease-out;
+            text-align: center;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        h1 {
+            color: #fff;
+            font-weight: 700;
+            font-size: 1.8rem;
+            margin-bottom: 5px;
+            letter-spacing: 1px;
+            text-shadow: 0 0 20px rgba(78, 115, 223, 0.5);
+        }
+        
+        h3 { color: #a0aec0; font-weight: 300; font-size: 0.9rem; margin-top: 0; }
+
+        /* Inputs */
+        input {
+            width: 100%;
+            box-sizing: border-box;
+            background: rgba(0, 0, 0, 0.2);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 15px;
+            color: white;
+            font-size: 1rem;
+            margin-bottom: 15px;
+            transition: all 0.3s ease;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 15px rgba(78, 115, 223, 0.3);
+            background: rgba(0, 0, 0, 0.4);
+        }
+
+        /* Buttons */
+        button {
+            width: 100%;
+            border: none;
+            padding: 15px;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-top: 10px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Connect Button (Submit) */
+        button[type='submit'] {
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            color: white;
+            box-shadow: 0 4px 15px rgba(78, 115, 223, 0.4);
+        }
+
+        button[type='submit']:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(78, 115, 223, 0.6);
+        }
+
+        /* Scan/Other Buttons */
+        button:not([type='submit']) {
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+            border: 1px solid var(--border);
+        }
+
+        button:not([type='submit']):hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        /* WiFi List Override */
+        div.c { text-align: left; }
+        
+        div, a { color: #b0c4de; text-decoration: none; transition: 0.3s; }
+        a:hover { color: #fff; text-shadow: 0 0 10px white; }
+
+        /* Loader Animation Override (if scanning) */
+        .q { float: right; }
+        
+        /* Custom Footer */
+        .footer {
+            margin-top: 30px;
+            font-size: 0.8rem;
+            color: rgba(255,255,255,0.3);
+        }
+    </style>
+    <script>
+        // Simple JS embellishments
+        document.addEventListener('DOMContentLoaded', function() {
+            // Add icon to title
+            const h1 = document.querySelector('h1');
+            if(h1) {
+                h1.innerHTML = '🤖<br>' + h1.innerHTML;
+                
+                // Add subtext if not present
+                if(!document.querySelector('h3')) {
+                    const h3 = document.createElement('h3');
+                    h3.innerText = 'Vacuum Robot Setup';
+                    h1.after(h3);
+                }
+            }
+            
+            // Add custom footer
+            const wrap = document.querySelector('.wrap');
+            if(wrap) {
+                const foot = document.createElement('div');
+                foot.className = 'footer';
+                foot.innerHTML = 'Powered by ESP32 & Laravel<br>ANTIGRAVITY SYSTEM';
+                wrap.appendChild(foot);
+            }
+        });
+    </script>
+    )";
     wm.setCustomHeadElement(custom_css);
     
     // reset settings - wipe credentials for testing
