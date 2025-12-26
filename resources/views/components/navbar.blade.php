@@ -1,6 +1,6 @@
 <nav class="navbar navbar-expand-lg navbar-dark navbar-custom fixed-top mb-5 shadow-sm">
     <div class="container">
-        <a class="navbar-brand" href="#">
+        <a class="navbar-brand" href="/">
             <i class="fas fa-robot mr-2"></i> Control Panel
         </a>
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
@@ -9,7 +9,7 @@
         <div class="collapse navbar-collapse" id="navbarNav">
             <ul class="navbar-nav ms-auto align-items-center">
                 <li class="nav-item">
-                    <a class="nav-link active" aria-current="page" href="#"><i class="fas fa-tachometer-alt me-1"></i> Dashboard</a>
+                    <a class="nav-link active" aria-current="page" href="/"><i class="fas fa-tachometer-alt me-1"></i> Dashboard</a>
                 </li>
                 <li class="nav-item">
                     <a class="nav-link" href="about"><i class="fas fa-info-circle me-1"></i> About</a>
