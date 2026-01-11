@@ -15,6 +15,10 @@ public:
     void sendBattery(int percent, float voltage);
     void checkResetButton();
     
+    // Buzzer
+    void initBuzzer();
+    void playWiFiResetBeep();
+    
     // Local copy of server data
     String lastState = "standby";
     String lastPowerMode = "normal";

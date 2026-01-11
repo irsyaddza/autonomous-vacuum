@@ -38,6 +38,9 @@
 // Function Buttons
 #define PIN_WIFI_RESET      0   // Tombol BOOT bawaan ESP32. Tekan tahan 5 detik.
 
+// Buzzer (Active Buzzer)
+#define PIN_BUZZER          27  // IO27 → Buzzer untuk feedback WiFi reset
+
 // ===== WIFI AP CONFIG =====
 // Nama dan password WiFi Access Point saat mode setup
 #define WIFI_AP_NAME        "VacuumRobot"       // Ganti sesuai keinginan

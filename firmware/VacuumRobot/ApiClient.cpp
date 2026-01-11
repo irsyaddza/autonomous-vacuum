@@ -5,6 +5,9 @@
 #include <WiFiManager.h> // PLEASE INSTALL: "WiFiManager" by tzapu
 
 void ApiClient::connectWiFi() {
+    // Initialize buzzer first
+    initBuzzer();
+    
     Serial.println("=============================");
     Serial.println("Starting WiFi Manager...");
     
@@ -228,7 +231,8 @@ void ApiClient::update() {
             WiFiManager wm;
             wm.resetSettings();
             Serial.println("Settings cleared. Restarting ESP32...");
-            delay(1000);
+            playWiFiResetBeep();
+            delay(500);
             ESP.restart();
         }
     }
@@ -382,10 +386,42 @@ void ApiClient::checkResetButton() {
             WiFiManager wm;
             wm.resetSettings();
             Serial.println("Settings cleared. Restarting...");
-            delay(1000);
+            
+            // Play buzzer beep to indicate WiFi reset success
+            playWiFiResetBeep();
+            
+            delay(500);
             ESP.restart();
         } else {
              Serial.println("\nButton released too early. Cancelled.");
         }
     }
+}
+
+// ===== BUZZER FUNCTIONS =====
+
+void ApiClient::initBuzzer() {
+    pinMode(PIN_BUZZER, OUTPUT);
+    digitalWrite(PIN_BUZZER, LOW); // Ensure buzzer is off
+    Serial.println("Buzzer initialized on GPIO 27");
+}
+
+void ApiClient::playWiFiResetBeep() {
+    Serial.println("Playing WiFi reset beep...");
+    
+    // Pattern: 3 short beeps
+    for (int i = 0; i < 3; i++) {
+        digitalWrite(PIN_BUZZER, HIGH);
+        delay(150);
+        digitalWrite(PIN_BUZZER, LOW);
+        delay(100);
+    }
+    
+    // 1 long beep
+    delay(200);
+    digitalWrite(PIN_BUZZER, HIGH);
+    delay(500);
+    digitalWrite(PIN_BUZZER, LOW);
+    
+    Serial.println("Beep complete!");
 }
