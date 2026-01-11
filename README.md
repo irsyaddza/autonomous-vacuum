@@ -35,7 +35,7 @@
 
 | Component | Technology |
 |-----------|------------|
-| **Backend** | Laravel 11 (PHP) |
+| **Backend** | Laravel 12 (PHP) |
 | **Frontend** | Blade + Bootstrap 5 + jQuery |
 | **Microcontroller** | ESP32 |
 | **Database** | MySQL |
