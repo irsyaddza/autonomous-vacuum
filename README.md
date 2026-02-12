@@ -82,7 +82,7 @@ vacuum_web/
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/yourusername/vacuum_web.git
+   git clone https://github.com/irsyaddza/vacuum_web.git
    cd vacuum_web
    ```
 
