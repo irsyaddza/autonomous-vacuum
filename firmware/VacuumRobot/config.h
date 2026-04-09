@@ -48,8 +48,12 @@
 
 // ===== API CONFIG =====
 #define API_BASE_URL        "http://10.253.103.67:8000/v1/vacuum"
-#define API_POLL_INTERVAL   2000    // ms - polling status dari server
+#define API_POLL_INTERVAL   2000    // ms - polling status dari server (fallback only)
 #define BATTERY_SEND_INTERVAL 60000 // ms - kirim data battery ke server
+
+// ===== DIRECT HTTP SERVER CONFIG =====
+#define ESP32_HTTP_PORT     80      // Port for receiving direct commands from browser
+#define FIRMWARE_VERSION    "2.0.0" // Firmware version for device registration
 
 // ===== MOTOR SETTINGS =====
 #define VACUUM_POWER_NORMAL 200     // Default PWM untuk vacuum NORMAL mode (0-255)

@@ -1,11 +1,14 @@
 #include "ApiClient.h"
 #include "config.h"
-#include <ArduinoJson.h> // Make sure you install ArduinoJson library
+#include <ArduinoJson.h>
+#include <WiFiManager.h>
 
-#include <WiFiManager.h> // PLEASE INSTALL: "WiFiManager" by tzapu
+// Global WebServer instance
+WebServer server(ESP32_HTTP_PORT);
+
+// ===== WIFI CONNECTION =====
 
 void ApiClient::connectWiFi() {
-    // Initialize buzzer first
     initBuzzer();
     
     Serial.println("=============================");
@@ -13,7 +16,6 @@ void ApiClient::connectWiFi() {
     
     WiFiManager wm;
     
-    // UI Customization
     // UI Customization - Premium Animated Dark Theme
     const char* custom_css = R"(
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -48,10 +50,8 @@ void ApiClient::connectWiFi() {
             100% { background-position: 0% 50%; }
         }
 
-        /* Container Limit for WiFiManager default layout */
         div, form { width: 100%; }
 
-        /* Main Card */
         .wrap {
             background: var(--glass);
             backdrop-filter: blur(16px);
@@ -83,7 +83,6 @@ void ApiClient::connectWiFi() {
         
         h3 { color: #a0aec0; font-weight: 300; font-size: 0.9rem; margin-top: 0; }
 
-        /* Inputs */
         input {
             width: 100%;
             box-sizing: border-box;
@@ -104,7 +103,6 @@ void ApiClient::connectWiFi() {
             background: rgba(0, 0, 0, 0.4);
         }
 
-        /* Buttons */
         button {
             width: 100%;
             border: none;
@@ -121,7 +119,6 @@ void ApiClient::connectWiFi() {
             overflow: hidden;
         }
 
-        /* Connect Button (Submit) */
         button[type='submit'] {
             background: linear-gradient(90deg, var(--primary), var(--secondary));
             color: white;
@@ -133,7 +130,6 @@ void ApiClient::connectWiFi() {
             box-shadow: 0 8px 25px rgba(78, 115, 223, 0.6);
         }
 
-        /* Scan/Other Buttons */
         button:not([type='submit']) {
             background: rgba(255, 255, 255, 0.1);
             color: #fff;
@@ -144,16 +140,13 @@ void ApiClient::connectWiFi() {
             background: rgba(255, 255, 255, 0.2);
         }
 
-        /* WiFi List Override */
         div.c { text-align: left; }
         
         div, a { color: #b0c4de; text-decoration: none; transition: 0.3s; }
         a:hover { color: #fff; text-shadow: 0 0 10px white; }
 
-        /* Loader Animation Override (if scanning) */
         .q { float: right; }
         
-        /* Custom Footer */
         .footer {
             margin-top: 30px;
             font-size: 0.8rem;
@@ -161,14 +154,11 @@ void ApiClient::connectWiFi() {
         }
     </style>
     <script>
-        // Simple JS embellishments
         document.addEventListener('DOMContentLoaded', function() {
-            // Add icon to title
             const h1 = document.querySelector('h1');
             if(h1) {
                 h1.innerHTML = '🤖<br>' + h1.innerHTML;
                 
-                // Add subtext if not present
                 if(!document.querySelector('h3')) {
                     const h3 = document.createElement('h3');
                     h3.innerText = 'Vacuum Robot Setup';
@@ -176,7 +166,6 @@ void ApiClient::connectWiFi() {
                 }
             }
             
-            // Add custom footer
             const wrap = document.querySelector('.wrap');
             if(wrap) {
                 const foot = document.createElement('div');
@@ -189,43 +178,218 @@ void ApiClient::connectWiFi() {
     )";
     wm.setCustomHeadElement(custom_css);
     
-    // reset settings - wipe credentials for testing
-    // wm.resetSettings(); 
-
-    // Custom parameter for API URL (Optional, advanced)
-    // WiFiManagerParameter custom_api_url("server", "API Base URL", API_BASE_URL, 60);
-    // wm.addParameter(&custom_api_url);
-
-    // Buka AP (Access Point) jika tidak connect
-    // Nama dan password diambil dari config.h
     Serial.print("Opening AP: ");
     Serial.println(WIFI_AP_NAME);
     bool res = wm.autoConnect(WIFI_AP_NAME, WIFI_AP_PASSWORD); 
 
     if(!res) {
         Serial.println("Failed to connect");
-        // ESP.restart();
     } 
     else {
         Serial.println(">>> WIFI CONNECTED SUCCESS! <<<");
         Serial.print("IP Address: ");
         Serial.println(WiFi.localIP());
-        
-        // Serial.print("API URL: ");
-        // Serial.println(custom_api_url.getValue());
         Serial.println("=============================");
     }
 }
+
+// ===== DIRECT HTTP WEB SERVER =====
+
+void ApiClient::_addCorsHeaders() {
+    server.sendHeader("Access-Control-Allow-Origin", "*");
+    server.sendHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+    server.sendHeader("Access-Control-Allow-Headers", "Content-Type");
+}
+
+void ApiClient::_handleCorsOptions() {
+    _addCorsHeaders();
+    server.send(204);
+}
+
+void ApiClient::_handleCommand() {
+    _addCorsHeaders();
+    
+    if (!server.hasArg("plain")) {
+        server.send(400, "application/json", "{\"success\":false,\"message\":\"No body\"}");
+        return;
+    }
+    
+    String body = server.arg("plain");
+    Serial.println(">>> DIRECT COMMAND RECEIVED <<<");
+    Serial.print("Body: ");
+    Serial.println(body);
+    
+    DynamicJsonDocument doc(256);
+    DeserializationError error = deserializeJson(doc, body);
+    
+    if (error) {
+        server.send(400, "application/json", "{\"success\":false,\"message\":\"Invalid JSON\"}");
+        return;
+    }
+    
+    String command = doc["command"] | "";
+    int value = doc["value"] | -1;
+    
+    // Map commands to states
+    if (command == "start") {
+        lastState = "working";
+    } else if (command == "stop") {
+        lastState = "stopping";
+    } else if (command == "return_home") {
+        lastState = "returning";
+    } else if (command == "eco") {
+        lastPowerMode = "eco";
+        lastPowerValue = 150;
+    } else if (command == "normal") {
+        lastPowerMode = "normal";
+        lastPowerValue = 200;
+    } else if (command == "strong") {
+        lastPowerMode = "strong";
+        lastPowerValue = 255;
+    } else {
+        server.send(400, "application/json", "{\"success\":false,\"message\":\"Unknown command\"}");
+        return;
+    }
+    
+    // If a custom power value was provided
+    if (value >= 0 && value <= 255) {
+        lastPowerValue = value;
+    }
+    
+    Serial.print(">>> State: "); Serial.println(lastState);
+    Serial.print(">>> Power Mode: "); Serial.println(lastPowerMode);
+    Serial.print(">>> Power Value: "); Serial.println(lastPowerValue);
+    
+    // Build response
+    DynamicJsonDocument resDoc(256);
+    resDoc["success"] = true;
+    resDoc["message"] = "Command executed: " + command;
+    resDoc["state"] = lastState;
+    resDoc["power_mode"] = lastPowerMode;
+    resDoc["power_value"] = lastPowerValue;
+    
+    String response;
+    serializeJson(resDoc, response);
+    
+    server.send(200, "application/json", response);
+    
+    // Log to Laravel server asynchronously
+    logCommandToServer(command, "success", 0);
+}
+
+void ApiClient::_handleStatus() {
+    _addCorsHeaders();
+    
+    DynamicJsonDocument doc(256);
+    doc["success"] = true;
+    doc["state"] = lastState;
+    doc["power_mode"] = lastPowerMode;
+    doc["power_value"] = lastPowerValue;
+    doc["direction"] = lastDirection;
+    doc["ip"] = WiFi.localIP().toString();
+    
+    String response;
+    serializeJson(doc, response);
+    
+    server.send(200, "application/json", response);
+}
+
+void ApiClient::startWebServer() {
+    // CORS preflight
+    server.on("/command", HTTP_OPTIONS, [this]() { _handleCorsOptions(); });
+    server.on("/status", HTTP_OPTIONS, [this]() { _handleCorsOptions(); });
+    
+    // Actual endpoints
+    server.on("/command", HTTP_POST, [this]() { _handleCommand(); });
+    server.on("/status", HTTP_GET, [this]() { _handleStatus(); });
+    
+    server.begin();
+    Serial.println(">>> HTTP Server started on port " + String(ESP32_HTTP_PORT));
+    Serial.println(">>> Endpoints: POST /command, GET /status");
+}
+
+void ApiClient::handleWebServer() {
+    server.handleClient();
+}
+
+// ===== DEVICE REGISTRATION =====
+
+void ApiClient::registerDevice() {
+    if (WiFi.status() != WL_CONNECTED) return;
+    
+    HTTPClient http;
+    String url = String(API_BASE_URL) + "/register-device";
+    
+    http.begin(url);
+    http.addHeader("Content-Type", "application/json");
+    
+    DynamicJsonDocument doc(256);
+    doc["ip_address"] = WiFi.localIP().toString();
+    doc["mac_address"] = WiFi.macAddress();
+    doc["firmware_version"] = FIRMWARE_VERSION;
+    
+    String json;
+    serializeJson(doc, json);
+    
+    Serial.println(">>> Registering device with server...");
+    Serial.print("  IP: "); Serial.println(WiFi.localIP());
+    Serial.print("  MAC: "); Serial.println(WiFi.macAddress());
+    
+    int httpCode = http.POST(json);
+    
+    if (httpCode == 200) {
+        Serial.println(">>> Device registered successfully!");
+    } else {
+        Serial.print(">>> Device registration failed: HTTP ");
+        Serial.println(httpCode);
+    }
+    
+    http.end();
+}
+
+// ===== COMMAND HISTORY LOGGING =====
+
+void ApiClient::logCommandToServer(String command, String status, int responseMs) {
+    if (WiFi.status() != WL_CONNECTED) return;
+    
+    HTTPClient http;
+    String url = String(API_BASE_URL) + "/command-log";
+    
+    http.begin(url);
+    http.addHeader("Content-Type", "application/json");
+    
+    DynamicJsonDocument doc(256);
+    doc["command"] = command;
+    doc["source"] = "esp32";
+    doc["status"] = status;
+    doc["response_time_ms"] = responseMs;
+    doc["esp32_ip"] = WiFi.localIP().toString();
+    
+    String json;
+    serializeJson(doc, json);
+    
+    int httpCode = http.POST(json);
+    http.end();
+    
+    if (httpCode == 201) {
+        Serial.println("  Command logged to server.");
+    }
+}
+
+// ===== MAIN UPDATE LOOP =====
 
 void ApiClient::update() {
     if (WiFi.status() != WL_CONNECTED) return;
 
     unsigned long now = millis();
 
-    // 0. Check Serial for "reset_wifi" command
+    // Handle incoming direct HTTP commands
+    handleWebServer();
+
+    // Check Serial for "reset_wifi" command
     if (Serial.available()) {
         String cmd = Serial.readStringUntil('\n');
-        cmd.trim(); // Remove whitespace
+        cmd.trim();
         if (cmd == "reset_wifi") {
             Serial.println("!!! RESETTING WIFI SETTINGS !!!");
             WiFiManager wm;
@@ -237,15 +401,17 @@ void ApiClient::update() {
         }
     }
 
-    // 0.5 Check Physical Button
+    // Check Physical Button
     checkResetButton();
 
-    // 1. Poll Status
+    // Fallback: Poll Status from Laravel (in case commands came via DB)
     if (now - _lastPollTime > API_POLL_INTERVAL) {
         _lastPollTime = now;
         getStatus(); 
     }
 }
+
+// ===== LEGACY: POLL STATUS FROM LARAVEL =====
 
 String ApiClient::getStatus() {
     HTTPClient http;
@@ -265,6 +431,8 @@ String ApiClient::getStatus() {
     http.end();
 }
 
+// ===== BATTERY DATA =====
+
 void ApiClient::sendBattery(int percent, float voltage) {
     if (WiFi.status() != WL_CONNECTED) return;
     
@@ -277,7 +445,7 @@ void ApiClient::sendBattery(int percent, float voltage) {
     DynamicJsonDocument doc(200);
     doc["battery_percent"] = percent;
     doc["battery_voltage"] = voltage;
-    doc["estimated_time"] = String(percent / 10.0) + "h"; // Simple mock estimate
+    doc["estimated_time"] = String(percent / 10.0) + "h";
     
     String json;
     serializeJson(doc, json);
@@ -286,11 +454,9 @@ void ApiClient::sendBattery(int percent, float voltage) {
     http.end();
 }
 
+// ===== PARSE STATUS RESPONSE =====
+
 void ApiClient::_parseStatusResponse(String json) {
-    Serial.println("========== API RESPONSE DEBUG ==========");
-    Serial.print("Raw JSON: ");
-    Serial.println(json);
-    
     DynamicJsonDocument doc(512);
     DeserializationError error = deserializeJson(doc, json);
     
@@ -304,68 +470,29 @@ void ApiClient::_parseStatusResponse(String json) {
         String newState = String((const char*)doc["data"]["state"]);
         String newMode = String((const char*)doc["data"]["power_mode"]);
         int newVal = doc["data"]["power_value"];
-        String newDirection = doc["data"]["direction"] | "forward";  // Default to forward if not present
+        String newDirection = doc["data"]["direction"] | "forward";
         
-        Serial.println("--- PARSED VALUES ---");
-        Serial.print("State: ");
-        Serial.println(newState);
-        Serial.print("Power Mode: ");
-        Serial.println(newMode);
-        Serial.print("Power Value: ");
-        Serial.println(newVal);
-        Serial.print("Direction: ");
-        Serial.println(newDirection);
-        Serial.println("---");
-        
-        // Log changes
+        // Log changes only
         if (newState != lastState) {
-            Serial.print(">>> COMMAND RECEIVED: State changed from ");
-            Serial.print(lastState);
-            Serial.print(" to ");
+            Serial.print(">>> FALLBACK: State changed to ");
             Serial.println(newState);
         }
-
         if (newMode != lastPowerMode) {
-             Serial.print(">>> COMMAND RECEIVED: Power Mode changed from ");
-             Serial.print(lastPowerMode);
-             Serial.print(" to ");
-             Serial.println(newMode);
+            Serial.print(">>> FALLBACK: Power Mode changed to ");
+            Serial.println(newMode);
         }
         
-        if (newVal != lastPowerValue) {
-            Serial.print(">>> POWER VALUE UPDATED: ");
-            Serial.print(lastPowerValue);
-            Serial.print(" -> ");
-            Serial.println(newVal);
-        }
-        
-        if (newDirection != lastDirection) {
-            Serial.print(">>> DIRECTION CHANGED: ");
-            Serial.print(lastDirection);
-            Serial.print(" -> ");
-            Serial.println(newDirection);
-        }
-        
-        // UPDATE VARIABLES
         lastState = newState;
         lastPowerMode = newMode;
         lastPowerValue = newVal;
         lastDirection = newDirection;
-        
-        Serial.print("CURRENT lastPowerValue = ");
-        Serial.println(lastPowerValue);
-        Serial.print("CURRENT lastDirection = ");
-        Serial.println(lastDirection);
-        Serial.println("========================================");
-    } else {
-        Serial.println("ERROR: Response success = false");
-        Serial.println("========================================");
     }
 }
 
+// ===== PHYSICAL BUTTON =====
+
 void ApiClient::checkResetButton() {
-    // Logic: Tekan tahan 5 detik untuk reset
-    if (digitalRead(PIN_WIFI_RESET) == LOW) { // Button Pressed (Active Low)
+    if (digitalRead(PIN_WIFI_RESET) == LOW) {
         unsigned long startPress = millis();
         bool longPress = false;
         
@@ -386,10 +513,7 @@ void ApiClient::checkResetButton() {
             WiFiManager wm;
             wm.resetSettings();
             Serial.println("Settings cleared. Restarting...");
-            
-            // Play buzzer beep to indicate WiFi reset success
             playWiFiResetBeep();
-            
             delay(500);
             ESP.restart();
         } else {
@@ -402,14 +526,13 @@ void ApiClient::checkResetButton() {
 
 void ApiClient::initBuzzer() {
     pinMode(PIN_BUZZER, OUTPUT);
-    digitalWrite(PIN_BUZZER, LOW); // Ensure buzzer is off
+    digitalWrite(PIN_BUZZER, LOW);
     Serial.println("Buzzer initialized on GPIO 27");
 }
 
 void ApiClient::playWiFiResetBeep() {
     Serial.println("Playing WiFi reset beep...");
     
-    // Pattern: 3 short beeps
     for (int i = 0; i < 3; i++) {
         digitalWrite(PIN_BUZZER, HIGH);
         delay(150);
@@ -417,7 +540,6 @@ void ApiClient::playWiFiResetBeep() {
         delay(100);
     }
     
-    // 1 long beep
     delay(200);
     digitalWrite(PIN_BUZZER, HIGH);
     delay(500);

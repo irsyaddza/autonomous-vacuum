@@ -155,23 +155,24 @@
 
     <!-- Inline script for page specific logic -->
     <script>
-        // Use relative path for API to avoid hardcoding localhost if deployed
+        // ===== CONFIGURATION =====
         const API_BASE_URL = "/v1/vacuum";
+        const ESP32_TIMEOUT = 3000; // 3 seconds timeout for direct ESP32 communication
 
-        // Global State
+        // ===== GLOBAL STATE =====
+        let esp32Ip = null; // Will be fetched from Laravel on page load
         let vacuumState = {
             state: 'standby',
             powerMode: 'normal',
             batteryPercent: 85
         };
 
-        // UI Helpers
+        // ===== UI HELPERS =====
         function showNotification(type, message) {
-            const icon = type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle';
-            const colorClass = type === 'success' ? 'text-success' : 'text-danger';
-            const borderClass = type === 'success' ? 'border-success' : 'border-danger';
+            const icon = type === 'success' ? 'fa-check-circle' : type === 'warning' ? 'fa-exclamation-triangle' : 'fa-exclamation-circle';
+            const colorClass = type === 'success' ? 'text-success' : type === 'warning' ? 'text-warning' : 'text-danger';
+            const borderClass = type === 'success' ? 'border-success' : type === 'warning' ? 'border-warning' : 'border-danger';
             
-            // Premium Toast-like notification
             const html = `
                 <div class="alert alert-dark border-start ${borderClass} border-4 shadow-lg fade show" role="alert" style="background: rgba(30, 41, 59, 0.95);">
                     <div class="d-flex align-items-center">
@@ -185,7 +186,6 @@
             const container = document.getElementById('notification-container');
             container.innerHTML = html;
             
-            // Auto hide after 3s
             setTimeout(() => {
                 const alerts = container.querySelectorAll('.alert');
                 alerts.forEach(el => {
@@ -195,50 +195,166 @@
             }, 3000);
         }
 
-        // API Interaction
-        function sendVacuumCommand(command) {
-            const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-            
-            $.ajax({
-                url: `${API_BASE_URL}/command`,
-                type: 'POST',
-                headers: { 'X-CSRF-TOKEN': csrfToken, 'Content-Type': 'application/json' },
-                data: JSON.stringify({ command: command }),
-                success: (res) => {
-                    showNotification('success', `Command sent: ${command.toUpperCase()}`);
-                    setTimeout(fetchVacuumStatus, 500);
-                },
-                error: (err) => {
-                    console.error(err);
-                    showNotification('error', `Failed to send command: ${command}`);
+        // ===== ESP32 IP DISCOVERY =====
+        async function discoverEsp32() {
+            try {
+                const res = await $.get(`${API_BASE_URL}/device`);
+                if (res.success && res.data) {
+                    esp32Ip = res.data.ip_address;
+                    console.log(`✅ ESP32 discovered at: ${esp32Ip}`);
+                    return true;
                 }
+            } catch (err) {
+                console.warn('⚠️ No ESP32 device registered. Using fallback mode.');
+            }
+            esp32Ip = null;
+            return false;
+        }
+
+        // ===== DIRECT HTTP TO ESP32 =====
+        function sendToEsp32(endpoint, payload) {
+            return new Promise((resolve, reject) => {
+                if (!esp32Ip) {
+                    reject(new Error('No ESP32 IP'));
+                    return;
+                }
+
+                const startTime = Date.now();
+
+                $.ajax({
+                    url: `http://${esp32Ip}/${endpoint}`,
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify(payload),
+                    timeout: ESP32_TIMEOUT,
+                    success: (res) => {
+                        const elapsed = Date.now() - startTime;
+                        resolve({ ...res, responseTime: elapsed });
+                    },
+                    error: (xhr, status, error) => {
+                        const elapsed = Date.now() - startTime;
+                        reject({ status, error, responseTime: elapsed });
+                    }
+                });
             });
         }
 
-        function setPowerMode(mode) {
+        // ===== FALLBACK: Send via Laravel DB (old flow) =====
+        function sendViaLaravel(command, type = 'command') {
+            const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
             const powerValues = { 'eco': 150, 'normal': 200, 'strong': 255 };
+
+            let url, data;
+            if (type === 'power') {
+                url = `${API_BASE_URL}/power-mode`;
+                data = { mode: command, value: powerValues[command] };
+            } else {
+                url = `${API_BASE_URL}/command`;
+                data = { command: command };
+            }
+
+            return new Promise((resolve, reject) => {
+                $.ajax({
+                    url: url,
+                    type: 'POST',
+                    headers: { 'X-CSRF-TOKEN': csrfToken, 'Content-Type': 'application/json' },
+                    data: JSON.stringify(data),
+                    success: (res) => resolve(res),
+                    error: (err) => reject(err)
+                });
+            });
+        }
+
+        // ===== LOG COMMAND TO LARAVEL (history) =====
+        function logCommandToServer(command, status, responseTimeMs, esp32Ip) {
             const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
             
             $.ajax({
-                url: `${API_BASE_URL}/power-mode`,
+                url: `${API_BASE_URL}/command-log`,
                 type: 'POST',
                 headers: { 'X-CSRF-TOKEN': csrfToken, 'Content-Type': 'application/json' },
-                data: JSON.stringify({ mode: mode, value: powerValues[mode] }),
-                success: (res) => {
-                    showNotification('success', `Switched to ${mode.toUpperCase()} mode`);
-                    updatePowerModeUI(mode);
-                },
-                error: (err) => showNotification('error', `Failed to change power mode`)
+                data: JSON.stringify({
+                    command: command,
+                    source: 'web',
+                    status: status,
+                    response_time_ms: responseTimeMs,
+                    esp32_ip: esp32Ip
+                }),
+                error: (err) => console.error('Failed to log command:', err)
             });
         }
 
-        // Listeners for Buttons
+        // ===== MAIN COMMAND SENDER (Direct → Fallback) =====
+        async function sendVacuumCommand(command) {
+            // Try Direct HTTP to ESP32 first
+            if (esp32Ip) {
+                try {
+                    const res = await sendToEsp32('command', { command: command });
+                    showNotification('success', `⚡ Direct: ${command.toUpperCase()} (${res.responseTime}ms)`);
+                    
+                    // Log to history
+                    logCommandToServer(command, 'success', res.responseTime, esp32Ip);
+                    
+                    // Update UI from ESP32 response if available
+                    if (res.state) {
+                        updateStatusUI({ state: res.state, power_mode: res.power_mode });
+                    }
+                    return;
+                } catch (err) {
+                    console.warn(`⚠️ ESP32 unreachable (${err.responseTime}ms), falling back to Laravel...`);
+                    logCommandToServer(command, 'timeout', err.responseTime, esp32Ip);
+                }
+            }
+
+            // Fallback: Send via Laravel DB
+            try {
+                await sendViaLaravel(command, 'command');
+                showNotification('warning', `📡 Fallback: ${command.toUpperCase()} sent via server`);
+                setTimeout(fetchVacuumStatus, 500);
+            } catch (err) {
+                showNotification('error', `Failed to send command: ${command}`);
+                logCommandToServer(command, 'failed', 0, null);
+            }
+        }
+
+        async function setPowerMode(mode) {
+            const powerValues = { 'eco': 150, 'normal': 200, 'strong': 255 };
+
+            // Try Direct HTTP to ESP32 first
+            if (esp32Ip) {
+                try {
+                    const res = await sendToEsp32('command', { 
+                        command: mode, 
+                        value: powerValues[mode] 
+                    });
+                    showNotification('success', `⚡ Direct: ${mode.toUpperCase()} mode (${res.responseTime}ms)`);
+                    logCommandToServer(mode, 'success', res.responseTime, esp32Ip);
+                    updatePowerModeUI(mode);
+                    return;
+                } catch (err) {
+                    console.warn(`⚠️ ESP32 unreachable, falling back...`);
+                    logCommandToServer(mode, 'timeout', err.responseTime, esp32Ip);
+                }
+            }
+
+            // Fallback: Send via Laravel DB
+            try {
+                await sendViaLaravel(mode, 'power');
+                showNotification('warning', `📡 Fallback: ${mode.toUpperCase()} mode via server`);
+                updatePowerModeUI(mode);
+            } catch (err) {
+                showNotification('error', `Failed to change power mode`);
+                logCommandToServer(mode, 'failed', 0, null);
+            }
+        }
+
+        // ===== BUTTON LISTENERS =====
         window.startVacuum = () => sendVacuumCommand('start');
         window.stopVacuum = () => sendVacuumCommand('stop');
         window.returnToBase = () => sendVacuumCommand('return_home');
-        window.setPowerMode = setPowerMode; // Expose to global
+        window.setPowerMode = setPowerMode;
 
-        // Fetching Data
+        // ===== FETCHING DATA (still from Laravel for dashboard sync) =====
         function fetchFullStatus() {
             $.get(`${API_BASE_URL}/full-status`, (res) => {
                 if(res.success) {
@@ -263,7 +379,7 @@
             });
         }
 
-        // Updating UI
+        // ===== UI UPDATE FUNCTIONS =====
         function updateUI(vacuum, battery) {
             updateStatusUI(vacuum);
             updateBatteryUI(battery);
@@ -273,7 +389,6 @@
             const statusEl = document.getElementById('statusRobot');
             const infoEl = document.getElementById('statusInfo');
             
-            // Map status to badges
             let badgeClass = 'bg-secondary';
             let statusText = 'Unknown';
             let infoText = '...';
@@ -312,8 +427,7 @@
             const bar = document.getElementById('batteryBar');
             bar.style.width = `${percent}%`;
             
-            // Update bar color class dynamically based on level
-            bar.className = 'progress-bar'; // reset
+            bar.className = 'progress-bar';
             if(percent > 50) bar.classList.add('bg-success');
             else if(percent > 20) bar.classList.add('bg-warning');
             else bar.classList.add('bg-danger');
@@ -334,13 +448,22 @@
             document.getElementById('powerInfo').innerHTML = `Current: <span class="text-white fw-bold uppercase">${mode.toUpperCase()}</span>`;
         }
 
-        // Polling
+        // ===== INITIALIZATION =====
         let statusInterval, batteryInterval;
 
-        document.addEventListener('DOMContentLoaded', () => {
-             fetchFullStatus();
-             statusInterval = setInterval(fetchVacuumStatus, 2000);
-             batteryInterval = setInterval(fetchBatteryData, 5000);
+        document.addEventListener('DOMContentLoaded', async () => {
+            // 1. Discover ESP32 IP
+            await discoverEsp32();
+            
+            // 2. Fetch initial dashboard state
+            fetchFullStatus();
+            
+            // 3. Keep polling for dashboard sync (status from Laravel DB)
+            statusInterval = setInterval(fetchVacuumStatus, 20000);
+            batteryInterval = setInterval(fetchBatteryData, 10000);
+            
+            // 4. Re-discover ESP32 IP every 30 seconds
+            setInterval(discoverEsp32, 30000);
         });
 
         window.addEventListener('beforeunload', () => {
