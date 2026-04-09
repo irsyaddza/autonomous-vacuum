@@ -381,9 +381,7 @@ void ApiClient::logCommandToServer(String command, String status, int responseMs
 void ApiClient::update() {
     if (WiFi.status() != WL_CONNECTED) return;
 
-    unsigned long now = millis();
-
-    // Handle incoming direct HTTP commands
+    // Handle incoming direct HTTP commands from browser
     handleWebServer();
 
     // Check Serial for "reset_wifi" command
@@ -403,32 +401,6 @@ void ApiClient::update() {
 
     // Check Physical Button
     checkResetButton();
-
-    // Fallback: Poll Status from Laravel (in case commands came via DB)
-    if (now - _lastPollTime > API_POLL_INTERVAL) {
-        _lastPollTime = now;
-        getStatus(); 
-    }
-}
-
-// ===== LEGACY: POLL STATUS FROM LARAVEL =====
-
-String ApiClient::getStatus() {
-    HTTPClient http;
-    String url = String(API_BASE_URL) + "/status";
-    
-    http.begin(url);
-    int httpCode = http.GET();
-    
-    if (httpCode == 200) {
-        String payload = http.getString();
-        _parseStatusResponse(payload);
-        return payload;
-    } else {
-        Serial.println("Error getting status");
-        return "";
-    }
-    http.end();
 }
 
 // ===== BATTERY DATA =====
@@ -454,40 +426,6 @@ void ApiClient::sendBattery(int percent, float voltage) {
     http.end();
 }
 
-// ===== PARSE STATUS RESPONSE =====
-
-void ApiClient::_parseStatusResponse(String json) {
-    DynamicJsonDocument doc(512);
-    DeserializationError error = deserializeJson(doc, json);
-    
-    if (error) {
-        Serial.print("JSON PARSE ERROR: ");
-        Serial.println(error.c_str());
-        return;
-    }
-    
-    if (doc["success"]) {
-        String newState = String((const char*)doc["data"]["state"]);
-        String newMode = String((const char*)doc["data"]["power_mode"]);
-        int newVal = doc["data"]["power_value"];
-        String newDirection = doc["data"]["direction"] | "forward";
-        
-        // Log changes only
-        if (newState != lastState) {
-            Serial.print(">>> FALLBACK: State changed to ");
-            Serial.println(newState);
-        }
-        if (newMode != lastPowerMode) {
-            Serial.print(">>> FALLBACK: Power Mode changed to ");
-            Serial.println(newMode);
-        }
-        
-        lastState = newState;
-        lastPowerMode = newMode;
-        lastPowerValue = newVal;
-        lastDirection = newDirection;
-    }
-}
 
 // ===== PHYSICAL BUTTON =====
 
