@@ -239,32 +239,6 @@
             });
         }
 
-        // ===== FALLBACK: Send via Laravel DB (old flow) =====
-        function sendViaLaravel(command, type = 'command') {
-            const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-            const powerValues = { 'eco': 150, 'normal': 200, 'strong': 255 };
-
-            let url, data;
-            if (type === 'power') {
-                url = `${API_BASE_URL}/power-mode`;
-                data = { mode: command, value: powerValues[command] };
-            } else {
-                url = `${API_BASE_URL}/command`;
-                data = { command: command };
-            }
-
-            return new Promise((resolve, reject) => {
-                $.ajax({
-                    url: url,
-                    type: 'POST',
-                    headers: { 'X-CSRF-TOKEN': csrfToken, 'Content-Type': 'application/json' },
-                    data: JSON.stringify(data),
-                    success: (res) => resolve(res),
-                    error: (err) => reject(err)
-                });
-            });
-        }
-
         // ===== LOG COMMAND TO LARAVEL (history) =====
         function logCommandToServer(command, status, responseTimeMs, esp32Ip) {
             const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
@@ -284,67 +258,46 @@
             });
         }
 
-        // ===== MAIN COMMAND SENDER (Direct → Fallback) =====
+        // ===== COMMAND SENDER (Direct HTTP Only) =====
         async function sendVacuumCommand(command) {
-            // Try Direct HTTP to ESP32 first
-            if (esp32Ip) {
-                try {
-                    const res = await sendToEsp32('command', { command: command });
-                    showNotification('success', `⚡ Direct: ${command.toUpperCase()} (${res.responseTime}ms)`);
-                    
-                    // Log to history
-                    logCommandToServer(command, 'success', res.responseTime, esp32Ip);
-                    
-                    // Update UI from ESP32 response if available
-                    if (res.state) {
-                        updateStatusUI({ state: res.state, power_mode: res.power_mode });
-                    }
-                    return;
-                } catch (err) {
-                    console.warn(`⚠️ ESP32 unreachable (${err.responseTime}ms), falling back to Laravel...`);
-                    logCommandToServer(command, 'timeout', err.responseTime, esp32Ip);
-                }
+            if (!esp32Ip) {
+                showNotification('error', '❌ ESP32 not connected. Cannot send command.');
+                return;
             }
 
-            // Fallback: Send via Laravel DB
             try {
-                await sendViaLaravel(command, 'command');
-                showNotification('warning', `📡 Fallback: ${command.toUpperCase()} sent via server`);
-                setTimeout(fetchVacuumStatus, 500);
+                const res = await sendToEsp32('command', { command: command });
+                showNotification('success', `⚡ ${command.toUpperCase()} (${res.responseTime}ms)`);
+                logCommandToServer(command, 'success', res.responseTime, esp32Ip);
+                
+                if (res.state) {
+                    updateStatusUI({ state: res.state, power_mode: res.power_mode });
+                }
             } catch (err) {
-                showNotification('error', `Failed to send command: ${command}`);
-                logCommandToServer(command, 'failed', 0, null);
+                showNotification('error', '❌ ESP32 unreachable. Try again.');
+                logCommandToServer(command, 'failed', err.responseTime || 0, esp32Ip);
             }
         }
 
         async function setPowerMode(mode) {
             const powerValues = { 'eco': 150, 'normal': 200, 'strong': 255 };
 
-            // Try Direct HTTP to ESP32 first
-            if (esp32Ip) {
-                try {
-                    const res = await sendToEsp32('command', { 
-                        command: mode, 
-                        value: powerValues[mode] 
-                    });
-                    showNotification('success', `⚡ Direct: ${mode.toUpperCase()} mode (${res.responseTime}ms)`);
-                    logCommandToServer(mode, 'success', res.responseTime, esp32Ip);
-                    updatePowerModeUI(mode);
-                    return;
-                } catch (err) {
-                    console.warn(`⚠️ ESP32 unreachable, falling back...`);
-                    logCommandToServer(mode, 'timeout', err.responseTime, esp32Ip);
-                }
+            if (!esp32Ip) {
+                showNotification('error', '❌ ESP32 not connected. Cannot change mode.');
+                return;
             }
 
-            // Fallback: Send via Laravel DB
             try {
-                await sendViaLaravel(mode, 'power');
-                showNotification('warning', `📡 Fallback: ${mode.toUpperCase()} mode via server`);
+                const res = await sendToEsp32('command', { 
+                    command: mode, 
+                    value: powerValues[mode] 
+                });
+                showNotification('success', `⚡ ${mode.toUpperCase()} mode (${res.responseTime}ms)`);
+                logCommandToServer(mode, 'success', res.responseTime, esp32Ip);
                 updatePowerModeUI(mode);
             } catch (err) {
-                showNotification('error', `Failed to change power mode`);
-                logCommandToServer(mode, 'failed', 0, null);
+                showNotification('error', '❌ ESP32 unreachable. Try again.');
+                logCommandToServer(mode, 'failed', err.responseTime || 0, esp32Ip);
             }
         }
 
