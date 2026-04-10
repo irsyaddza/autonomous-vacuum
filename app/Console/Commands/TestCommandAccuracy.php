@@ -4,214 +4,146 @@ namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Http;
+use App\Models\Esp32Device;
 
 class TestCommandAccuracy extends Command
 {
-    protected $signature = 'test:command-accuracy 
-                            {--count=50 : Number of times to send each command}
-                            {--base-url=http://127.0.0.1:8000 : Base URL of the server}
-                            {--delay=100 : Delay between requests in ms}';
+    /**
+     * The name and signature of the console command.
+     *
+     * @var string
+     */
+    protected $signature = 'test:command-accuracy {--samples=50} {--ip=}';
 
-    protected $description = 'Test command accuracy by sending each vacuum command N times and tracking results';
+    /**
+     * The console command description.
+     *
+     * @var string
+     */
+    protected $description = 'Test physical command accuracy and latency to the ESP32 hardware';
 
+    /**
+     * Execute the console command.
+     */
     public function handle()
     {
-        $count = (int) $this->option('count');
-        $baseUrl = rtrim($this->option('base-url'), '/');
-        $delayMs = (int) $this->option('delay');
-        $apiBase = $baseUrl . '/v1/vacuum';
+        set_time_limit(0);
+        
+        $samples = (int) $this->option('samples');
+        $esp32Ip = $this->option('ip');
 
-        $this->newLine();
-        $this->info('╔══════════════════════════════════════════════════════╗');
-        $this->info('║       VACUUM COMMAND ACCURACY TEST                  ║');
-        $this->info('╚══════════════════════════════════════════════════════╝');
-        $this->newLine();
-        $this->info("Base URL     : {$apiBase}");
-        $this->info("Per command  : {$count} requests");
-        $this->info("Delay        : {$delayMs}ms between requests");
-        $this->info("Total planned: " . ($count * 6) . " requests");
-        $this->newLine();
-
-        // Get CSRF cookie first by visiting the main page
-        $this->info('⏳ Fetching CSRF token...');
-        try {
-            $initResponse = Http::get($baseUrl);
-            // Extract CSRF token from meta tag
-            preg_match('/meta name="csrf-token" content="([^"]+)"/', $initResponse->body(), $matches);
-            $csrfToken = $matches[1] ?? null;
-
-            if (!$csrfToken) {
-                $this->error('❌ Could not extract CSRF token from page.');
+        if (!$esp32Ip) {
+            $device = Esp32Device::latest('last_seen_at')->first();
+            if (!$device) {
+                $this->error("No ESP32 device registered in the database. Please specify IP manually using --ip=192.168.x.x");
                 return 1;
             }
-            $this->info("✅ CSRF token obtained: " . substr($csrfToken, 0, 15) . '...');
-
-            // Get cookies from response
-            $cookies = $initResponse->cookies();
-        } catch (\Exception $e) {
-            $this->error('❌ Cannot connect to server: ' . $e->getMessage());
-            $this->error('   Make sure `php artisan serve` is running.');
-            return 1;
+            $esp32Ip = $device->ip_address;
         }
 
-        $this->newLine();
+        $this->info("Starting Command Accuracy Test ($samples samples per command)");
+        $this->info("Target ESP32 IP: $esp32Ip\n");
 
-        // Define test commands
-        $tests = [
-            // Command endpoint tests
-            ['label' => 'START',       'url' => "{$apiBase}/command",    'payload' => ['command' => 'start']],
-            ['label' => 'STOP',        'url' => "{$apiBase}/command",    'payload' => ['command' => 'stop']],
-            ['label' => 'RETURN_HOME', 'url' => "{$apiBase}/command",    'payload' => ['command' => 'return_home']],
-            // Power mode endpoint tests
-            ['label' => 'ECO',         'url' => "{$apiBase}/power-mode", 'payload' => ['mode' => 'eco',    'value' => 150]],
-            ['label' => 'NORMAL',      'url' => "{$apiBase}/power-mode", 'payload' => ['mode' => 'normal', 'value' => 200]],
-            ['label' => 'STRONG',      'url' => "{$apiBase}/power-mode", 'payload' => ['mode' => 'strong', 'value' => 255]],
+        $commands = [
+            ['name' => 'START', 'payload' => ['command' => 'start']],
+            ['name' => 'STOP', 'payload' => ['command' => 'stop']],
+            ['name' => 'RETURN', 'payload' => ['command' => 'return_home']],
+            ['name' => 'ECO', 'payload' => ['command' => 'eco', 'value' => 150]],
+            ['name' => 'NORMAL', 'payload' => ['command' => 'normal', 'value' => 200]],
+            ['name' => 'STRONG', 'payload' => ['command' => 'strong', 'value' => 255]],
         ];
 
-        $allResults = [];
+        $results = [];
 
-        foreach ($tests as $test) {
-            $this->info("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
-            $this->info("🧪 Testing: {$test['label']}");
-            $this->info("   Endpoint: {$test['url']}");
-            $this->info("   Payload : " . json_encode($test['payload']));
-            $this->newLine();
-
-            $success = 0;
-            $fail = 0;
-            $responseTimes = [];
-            $errors = [];
-
-            $bar = $this->output->createProgressBar($count);
-            $bar->setFormat(' %current%/%max% [%bar%] %percent:3s%% | %elapsed:6s% ');
+        foreach ($commands as $cmd) {
+            $this->info("Testing Command: {$cmd['name']}...");
+            $bar = $this->output->createProgressBar($samples);
             $bar->start();
 
-            for ($i = 1; $i <= $count; $i++) {
+            $durations = [];
+            $successCount = 0;
+            $failCount = 0;
+
+            for ($i = 0; $i < $samples; $i++) {
                 try {
-                    $startTime = microtime(true);
-
-                    $response = Http::withHeaders([
-                        'X-CSRF-TOKEN' => $csrfToken,
-                        'Content-Type' => 'application/json',
-                        'Accept' => 'application/json',
-                    ])->withOptions([
-                        'cookies' => $cookies,
-                    ])->post($test['url'], $test['payload']);
-
-                    $elapsed = round((microtime(true) - $startTime) * 1000, 2); // ms
-                    $responseTimes[] = $elapsed;
-
-                    $body = $response->json();
-
-                    if ($response->successful() && ($body['success'] ?? false) === true) {
-                        $success++;
+                    $url = "http://{$esp32Ip}/command";
+                    
+                    $start = microtime(true);
+                    
+                    // Sending direct HTTP POST to ESP32 with 3s timeout
+                    $response = Http::timeout(3)->post($url, $cmd['payload']);
+                    
+                    $end = microtime(true);
+                    
+                    if ($response->successful() && $response->json('success') === true) {
+                        $successCount++;
+                        $durations[] = ($end - $start) * 1000;
                     } else {
-                        $fail++;
-                        $errors[] = "#{$i}: HTTP {$response->status()} - " . ($body['message'] ?? 'Unknown error');
+                        $failCount++;
                     }
                 } catch (\Exception $e) {
-                    $fail++;
-                    $elapsed = round((microtime(true) - $startTime) * 1000, 2);
-                    $responseTimes[] = $elapsed;
-                    $errors[] = "#{$i}: Exception - " . $e->getMessage();
+                    $failCount++;
                 }
-
+                
+                // Add a small delay between commands to prevent overloading the ESP32 server
+                usleep(200000); 
                 $bar->advance();
-
-                // Small delay between requests
-                if ($delayMs > 0 && $i < $count) {
-                    usleep($delayMs * 1000);
-                }
             }
-
             $bar->finish();
-            $this->newLine(2);
-
-            // Calculate stats
-            $avgTime = count($responseTimes) > 0 ? round(array_sum($responseTimes) / count($responseTimes), 2) : 0;
-            $minTime = count($responseTimes) > 0 ? round(min($responseTimes), 2) : 0;
-            $maxTime = count($responseTimes) > 0 ? round(max($responseTimes), 2) : 0;
-            $accuracy = $count > 0 ? round(($success / $count) * 100, 2) : 0;
-
-            $allResults[] = [
-                'command'    => $test['label'],
-                'total'      => $count,
-                'success'    => $success,
-                'fail'       => $fail,
-                'accuracy'   => $accuracy,
-                'avg_ms'     => $avgTime,
-                'min_ms'     => $minTime,
-                'max_ms'     => $maxTime,
-            ];
-
-            // Print per-command result
-            $this->info("   ✅ Success  : {$success}/{$count}");
-            if ($fail > 0) {
-                $this->error("   ❌ Failed   : {$fail}/{$count}");
-            }
-            $this->info("   📊 Accuracy : {$accuracy}%");
-            $this->info("   ⏱  Avg Time : {$avgTime}ms (min: {$minTime}ms, max: {$maxTime}ms)");
-
-            if (count($errors) > 0) {
-                $this->newLine();
-                $this->warn("   Errors:");
-                foreach (array_slice($errors, 0, 5) as $err) {
-                    $this->warn("     · {$err}");
-                }
-                if (count($errors) > 5) {
-                    $this->warn("     · ...and " . (count($errors) - 5) . " more");
-                }
-            }
-
             $this->newLine();
+            
+            $accuracy = ($samples > 0) ? ($successCount / $samples) * 100 : 0;
+
+            if (count($durations) > 0) {
+                $min = min($durations);
+                $max = max($durations);
+                $avg = array_sum($durations) / count($durations);
+                
+                $results[] = [
+                    'name' => $cmd['name'],
+                    'tests' => $samples,
+                    'success' => $successCount,
+                    'fail' => $failCount,
+                    'accuracy' => number_format($accuracy, 0),
+                    'avg' => number_format($avg, 2, '.', ''),
+                    'min' => number_format($min, 2, '.', ''),
+                    'max' => number_format($max, 2, '.', '')
+                ];
+            } else {
+                $results[] = [
+                    'name' => $cmd['name'],
+                    'tests' => $samples,
+                    'success' => $successCount,
+                    'fail' => $failCount,
+                    'accuracy' => number_format($accuracy, 0),
+                    'avg' => '-',
+                    'min' => '-',
+                    'max' => '-'
+                ];
+            }
         }
 
-        // ========= SUMMARY TABLE =========
-        $this->newLine();
-        $this->info('╔══════════════════════════════════════════════════════════════════════════════╗');
-        $this->info('║                         FINAL SUMMARY                                      ║');
-        $this->info('╚══════════════════════════════════════════════════════════════════════════════╝');
-        $this->newLine();
+        $this->info("\nProcessing results...\n");
 
-        $this->table(
-            ['Command', 'Total', 'Success', 'Fail', 'Accuracy %', 'Avg (ms)', 'Min (ms)', 'Max (ms)'],
-            array_map(fn($r) => [
-                $r['command'],
-                $r['total'],
-                $r['success'],
-                $r['fail'],
-                $r['accuracy'] . '%',
-                $r['avg_ms'],
-                $r['min_ms'],
-                $r['max_ms'],
-            ], $allResults)
-        );
+        // Create markdown table
+        $this->line("| Commands | Tests | Success | Fail | Accuracy (%) | Avg (ms) | Min (ms) | Max (ms) |");
+        $this->line("|---|---|---|---|---|---|---|---|");
 
-        // Overall stats
-        $totalRequests = array_sum(array_column($allResults, 'total'));
-        $totalSuccess  = array_sum(array_column($allResults, 'success'));
-        $totalFail     = array_sum(array_column($allResults, 'fail'));
-        $overallAccuracy = $totalRequests > 0 ? round(($totalSuccess / $totalRequests) * 100, 2) : 0;
-        $overallAvg    = round(array_sum(array_column($allResults, 'avg_ms')) / count($allResults), 2);
-
-        $this->newLine();
-        $this->info("📋 Overall Results:");
-        $this->info("   Total Requests  : {$totalRequests}");
-        $this->info("   Total Success   : {$totalSuccess}");
-        $this->info("   Total Failed    : {$totalFail}");
-        $this->info("   Overall Accuracy: {$overallAccuracy}%");
-        $this->info("   Avg Response    : {$overallAvg}ms");
-        $this->newLine();
-
-        if ($overallAccuracy >= 100) {
-            $this->info('🎉 PERFECT! All commands delivered successfully!');
-        } elseif ($overallAccuracy >= 95) {
-            $this->warn('⚠️  Some commands failed. Check error logs above.');
-        } else {
-            $this->error('❌ Significant failures detected. Review server logs.');
+        foreach ($results as $res) {
+            $this->line(sprintf("| %s | %d | %d | %d | %s | %s | %s | %s |",
+                $res['name'],
+                $res['tests'],
+                $res['success'],
+                $res['fail'],
+                $res['accuracy'],
+                $res['avg'],
+                $res['min'],
+                $res['max']
+            ));
         }
 
         $this->newLine();
+        $this->info("Done! Copy the markdown table above for your dataset.");
         return 0;
     }
 }
