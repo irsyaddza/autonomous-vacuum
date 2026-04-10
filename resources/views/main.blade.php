@@ -205,7 +205,7 @@
                     return true;
                 }
             } catch (err) {
-                console.warn('⚠️ No ESP32 device registered. Using fallback mode.');
+                console.warn('⚠️ No ESP32 device registered');
             }
             esp32Ip = null;
             return false;
