@@ -47,7 +47,7 @@
 #define WIFI_AP_PASSWORD    "VacuumRobot123"    // Minimal 8 karakter
 
 // ===== API CONFIG =====
-#define API_BASE_URL        "http://10.253.103.67:8000/v1/vacuum"
+#define API_BASE_URL        "http://192.168.1.2:8000/v1/vacuum"
 #define API_POLL_INTERVAL   2000    // ms - polling status dari server (fallback only)
 #define BATTERY_SEND_INTERVAL 60000 // ms - kirim data battery ke server
 
