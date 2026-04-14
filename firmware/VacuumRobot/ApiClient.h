@@ -5,6 +5,7 @@
 #include <WiFi.h>
 #include <HTTPClient.h>
 #include <WebServer.h>
+#include <Preferences.h>
 
 class ApiClient {
 public:
@@ -38,6 +39,9 @@ private:
     void _handleStatus();        // Handler for GET /status
     void _handleCorsOptions();   // Handler for OPTIONS (CORS preflight)
     void _addCorsHeaders();      // Add CORS headers to response
+    
+    String apiBaseUrl;           // Stored API URL
+    Preferences preferences;     // Preferences for NVS storage
 };
 
 #endif
