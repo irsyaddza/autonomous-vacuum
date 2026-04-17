@@ -11,10 +11,24 @@ WebServer server(ESP32_HTTP_PORT);
 void ApiClient::connectWiFi() {
     initBuzzer();
     
+    // Load API URL from NVS Preferences
+    preferences.begin("vacuum-app", false);
+    apiBaseUrl = preferences.getString("api_url", DEFAULT_API_BASE_URL);
+    
     Serial.println("=============================");
     Serial.println("Starting WiFi Manager...");
+    Serial.print("Current API Base URL: ");
+    Serial.println(apiBaseUrl);
     
     WiFiManager wm;
+    
+    // Setup Custom Parameter for API URL
+    // max length 100 bytes
+    char apiUrlStr[100];
+    strncpy(apiUrlStr, apiBaseUrl.c_str(), sizeof(apiUrlStr));
+    WiFiManagerParameter custom_api_url("api_url", "Server IP/URL (e.g. http://192.168.1.5:8000/v1/vacuum)", apiUrlStr, 100);
+    
+    wm.addParameter(&custom_api_url);
     
     // UI Customization - Premium Animated Dark Theme
     const char* custom_css = R"(
@@ -189,6 +203,13 @@ void ApiClient::connectWiFi() {
         Serial.println(">>> WIFI CONNECTED SUCCESS! <<<");
         Serial.print("IP Address: ");
         Serial.println(WiFi.localIP());
+        
+        // Save possibly updated API URL
+        apiBaseUrl = String(custom_api_url.getValue());
+        preferences.putString("api_url", apiBaseUrl);
+        Serial.print("Saved API Base URL: ");
+        Serial.println(apiBaseUrl);
+        
         Serial.println("=============================");
     }
 }
@@ -318,7 +339,7 @@ void ApiClient::registerDevice() {
     if (WiFi.status() != WL_CONNECTED) return;
     
     HTTPClient http;
-    String url = String(API_BASE_URL) + "/register-device";
+    String url = apiBaseUrl + "/register-device";
     
     http.begin(url);
     http.addHeader("Content-Type", "application/json");
@@ -353,7 +374,7 @@ void ApiClient::logCommandToServer(String command, String status, int responseMs
     if (WiFi.status() != WL_CONNECTED) return;
     
     HTTPClient http;
-    String url = String(API_BASE_URL) + "/command-log";
+    String url = apiBaseUrl + "/command-log";
     
     http.begin(url);
     http.addHeader("Content-Type", "application/json");
@@ -392,6 +413,8 @@ void ApiClient::update() {
             Serial.println("!!! RESETTING WIFI SETTINGS !!!");
             WiFiManager wm;
             wm.resetSettings();
+            preferences.begin("vacuum-app", false);
+            preferences.clear();
             Serial.println("Settings cleared. Restarting ESP32...");
             playWiFiResetBeep();
             delay(500);
@@ -409,7 +432,7 @@ void ApiClient::sendBattery(int percent, float voltage) {
     if (WiFi.status() != WL_CONNECTED) return;
     
     HTTPClient http;
-    String url = String(API_BASE_URL) + "/battery";
+    String url = apiBaseUrl + "/battery";
     
     http.begin(url);
     http.addHeader("Content-Type", "application/json");
@@ -450,6 +473,8 @@ void ApiClient::checkResetButton() {
             Serial.println("\n!!! RESETTING WIFI SETTINGS !!!");
             WiFiManager wm;
             wm.resetSettings();
+            preferences.begin("vacuum-app", false);
+            preferences.clear();
             Serial.println("Settings cleared. Restarting...");
             playWiFiResetBeep();
             delay(500);
