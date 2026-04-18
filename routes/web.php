@@ -24,5 +24,10 @@ Route::prefix('v1')->name('api.')->group(function () {
         Route::post('command', [VacuumAPIController::class, 'sendCommand'])->name('vacuum.command');
         Route::post('power-mode', [VacuumAPIController::class, 'setPowerMode'])->name('vacuum.power-mode');
         Route::post('battery', [VacuumAPIController::class, 'updateBattery'])->name('vacuum.battery');
+
+        // ===== Direct HTTP Architecture Endpoints =====
+        Route::post('register-device', [VacuumAPIController::class, 'registerDevice'])->name('vacuum.register-device');
+        Route::get('device', [VacuumAPIController::class, 'getDevice'])->name('vacuum.device');
+        Route::post('command-log', [VacuumAPIController::class, 'logCommand'])->name('vacuum.command-log');
     });
 });

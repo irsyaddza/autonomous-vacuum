@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\CommandLog;
 use App\Models\Dayahisap;
+use App\Models\Esp32Device;
 use App\Models\VacuumStatus;
 use App\Models\BatteryLog;
 use Illuminate\Http\Request;
@@ -258,6 +260,150 @@ class VacuumAPIController extends Controller
                 'success' => false,
                 'message' => 'Error: ' . $e->getMessage()
             ], 500);
+        }
+    }
+
+    /**
+     * POST /v1/vacuum/register-device
+     * ESP32 registers its IP and MAC on boot
+     */
+    public function registerDevice(Request $request)
+    {
+        try {
+            $validated = $request->validate([
+                'ip_address' => 'required|ip',
+                'mac_address' => 'required|string',
+                'firmware_version' => 'nullable|string',
+            ]);
+
+            $device = Esp32Device::updateOrCreate(
+                ['mac_address' => $validated['mac_address']],
+                [
+                    'ip_address' => $validated['ip_address'],
+                    'firmware_version' => $validated['firmware_version'] ?? null,
+                    'last_seen_at' => now(),
+                    'is_online' => true,
+                ]
+            );
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Device registered',
+                'data' => [
+                    'id' => $device->id,
+                    'ip_address' => $device->ip_address,
+                    'mac_address' => $device->mac_address,
+                    'registered_at' => $device->last_seen_at,
+                ]
+            ], 200);
+
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed',
+                'errors' => $e->errors()
+            ], 422);
+        }
+    }
+
+    /**
+     * GET /v1/vacuum/device
+     * Browser fetches the current ESP32 IP address
+     */
+    public function getDevice()
+    {
+        try {
+            $device = Esp32Device::where('is_online', true)
+                ->orderBy('last_seen_at', 'desc')
+                ->first();
+
+            if (!$device) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No ESP32 device registered'
+                ], 404);
+            }
+
+            return response()->json([
+                'success' => true,
+                'data' => [
+                    'ip_address' => $device->ip_address,
+                    'mac_address' => $device->mac_address,
+                    'firmware_version' => $device->firmware_version,
+                    'last_seen_at' => $device->last_seen_at,
+                    'is_online' => $device->is_online,
+                ]
+            ], 200);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * POST /v1/vacuum/command-log
+     * ESP32 logs an executed command to history
+     */
+    public function logCommand(Request $request)
+    {
+        try {
+            $validated = $request->validate([
+                'command' => 'required|string',
+                'source' => 'required|in:web,esp32',
+                'status' => 'required|in:success,failed,timeout',
+                'response_time_ms' => 'nullable|integer',
+                'esp32_ip' => 'nullable|string',
+                'payload' => 'nullable|array',
+            ]);
+
+            $log = CommandLog::create($validated);
+
+            // Also update vacuum_statuses so dashboard stays in sync
+            $stateMap = [
+                'start' => 'working',
+                'stop' => 'stopping',
+                'return_home' => 'returning',
+            ];
+            $powerMap = [
+                'eco' => ['mode' => 'eco', 'value' => 150],
+                'normal' => ['mode' => 'normal', 'value' => 200],
+                'strong' => ['mode' => 'strong', 'value' => 255],
+            ];
+
+            if ($validated['status'] === 'success') {
+                $vacuumStatus = VacuumStatus::first() ?? new VacuumStatus();
+
+                if (isset($stateMap[$validated['command']])) {
+                    $vacuumStatus->state = $stateMap[$validated['command']];
+                }
+                if (isset($powerMap[$validated['command']])) {
+                    $vacuumStatus->power_mode = $powerMap[$validated['command']]['mode'];
+                    $vacuumStatus->power_value = $powerMap[$validated['command']]['value'];
+                }
+
+                $vacuumStatus->save();
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Command logged',
+                'data' => [
+                    'id' => $log->id,
+                    'command' => $log->command,
+                    'status' => $log->status,
+                    'logged_at' => $log->created_at,
+                ]
+            ], 201);
+
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed',
+                'errors' => $e->errors()
+            ], 422);
         }
     }
 }

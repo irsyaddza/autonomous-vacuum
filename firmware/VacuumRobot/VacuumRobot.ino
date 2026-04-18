@@ -31,24 +31,53 @@ void setup() {
   // Initialize Network
   api.connectWiFi();
 
+  // Start Direct HTTP Server (receives commands from browser)
+  api.startWebServer();
+
+  // Register device IP with Laravel server
+  api.registerDevice();
+
   // Initialize Logic
   robot.begin();
   
-  Serial.println("\n=== ROBOT READY ===");
+  Serial.println("\n=== ROBOT READY (Direct HTTP Mode) ===");
   Serial.println("Motor Configuration:");
   Serial.println("  - Motor Driver 1: Brush (OUT1/2) + Vacuum (OUT3/4)");
   Serial.println("  - Motor Driver 2: Wheel Motors (LEFT + RIGHT)");
-  Serial.print("API Polling Interval: ");
-  Serial.print(API_POLL_INTERVAL / 1000);
-  Serial.println(" seconds");
-  Serial.println("Monitor this output to see state/power changes.");
-  Serial.println("===================\n");
+  Serial.print("Direct HTTP Server: Port ");
+  Serial.println(ESP32_HTTP_PORT);
+  Serial.print("Device IP: ");
+  Serial.println(WiFi.localIP());
+  Serial.print("Firmware: v");
+  Serial.println(FIRMWARE_VERSION);
+  Serial.println("Commands: POST /command, GET /status");
+  Serial.println("Fallback polling: every " + String(API_POLL_INTERVAL / 1000) + " seconds");
+  Serial.println("==========================================\n");
 }
+
+unsigned long lastBatterySend = 0;
 
 void loop() {
   // Update all subsystems
   robot.update();
-  api.update(); // Handle network polling
+  api.update(); // Handle WebServer + fallback polling
+  
+  // Send battery data periodically
+  if (millis() - lastBatterySend >= BATTERY_SEND_INTERVAL || lastBatterySend == 0) {
+    lastBatterySend = millis();
+    if (lastBatterySend == 0) lastBatterySend = 1; // Prevent re-triggering immediately
+    
+    float voltage = battery.getVoltage();
+    int percent = battery.getPercentage();
+    
+    Serial.print("[BATTERY] Voltage: ");
+    Serial.print(voltage);
+    Serial.print("V, Percentage: ");
+    Serial.print(percent);
+    Serial.println("%");
+    
+    api.sendBattery(percent, voltage);
+  }
   
   delay(10); // Small delay for stability
 }

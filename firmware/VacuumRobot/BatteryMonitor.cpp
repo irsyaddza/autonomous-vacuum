@@ -6,7 +6,14 @@ void BatteryMonitor::begin() {
 }
 
 float BatteryMonitor::getVoltage() {
-    int raw = analogRead(PIN_BATTERY_ADC);
+    // Take 10 samples to average out the noise
+    long sum = 0;
+    for(int i = 0; i < 10; i++) {
+        sum += analogRead(PIN_BATTERY_ADC);
+        delay(2);
+    }
+    float raw = sum / 10.0;
+    
     // ESP32 ADC is 12-bit (0-4095)
     // 3.3V ref
     float voltage = (raw / 4095.0) * 3.3 * _calibrationFactor;
