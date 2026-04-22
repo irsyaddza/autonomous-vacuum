@@ -22,7 +22,9 @@ float BatteryMonitor::getVoltage() {
 
 int BatteryMonitor::getPercentage() {
     float v = getVoltage();
-    // 2S Li-ion: 6.0V (0%) -> 8.4V (100%)
-    int pct = map((long)(v * 100), 600, 840, 0, 100);
+    // 3S Li-ion: 9.0V (0%) -> 12.6V (100%)
+    int pct = map((long)(v * 100), 900, 1260, 0, 100);
     return constrain(pct, 0, 100);
 }
+
+//R1 30kΩ, R2 10kΩ
