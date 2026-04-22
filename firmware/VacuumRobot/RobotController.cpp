@@ -16,7 +16,8 @@ extern BatteryMonitor battery;
 extern ApiClient api;
 
 void RobotController::begin() {
-    Serial.println("[ROBOT] Controller initialized - Basic control mode");
+    _cleaner.begin();
+    Serial.println("[ROBOT] Controller initialized - Manual + Autonomous modes");
     stopAll();
 }
 
@@ -29,10 +30,10 @@ void RobotController::update() {
         api.sendBattery(pct, volt);
     }
 
-    // 2. Simple State Machine
+    // 2. Read state from API
     String targetState = api.lastState;
     int targetPower = api.lastPowerValue;
-    String direction = api.lastDirection;  // Arah: forward, backward, left, right, stop
+    String direction = api.lastDirection;
     
     // Log state changes
     if (targetState != _prevState) {
@@ -53,52 +54,76 @@ void RobotController::update() {
         _prevPowerValue = targetPower;
     }
 
-    // LOGIC: Control based on state from website
+    // 3. MAIN LOGIC
     if (targetState == "working") {
-        // Log only once when entering working state
-        static bool wasWorking = false;
-        if (!wasWorking) {
-            Serial.println("==================");
-            Serial.println("[ROBOT] STATE = WORKING - STARTING ALL MOTORS");
-            Serial.print("[ROBOT] API lastPowerValue = ");
-            Serial.println(targetPower);
-            Serial.print("[ROBOT] Direction = '");
-            Serial.print(direction);
-            Serial.println("'");
-            Serial.print("[ROBOT] Direction length = ");
-            Serial.println(direction.length());
-            Serial.println("==================");
-            wasWorking = true;
-        }
         
-        // Set vacuum power
+        // Set vacuum power dari website
         vacuum.setPower(targetPower);
         
         // Start brush motor
         brush.forward();
         
-        // Control wheel direction from website
-        // DEBUG: Log wheel command
-        static unsigned long lastWheelLog = 0;
-        if (millis() - lastWheelLog > 2000) {  // Log every 2 seconds
-            Serial.print("[WHEEL DEBUG] Calling moveForward, direction='");
-            Serial.print(direction);
-            Serial.println("'");
-            lastWheelLog = millis();
-        }
-        
-        // Default: moveForward jika direction kosong/stop/"" (robot jalan saat working)
-        if (direction == "backward") {
-            wheels.moveBackward();
-        } else if (direction == "left") {
-            wheels.turnLeft();
-        } else if (direction == "right") {
-            wheels.turnRight();
-        } else if (direction == "stop") {
-            wheels.stop();  // Explicit stop dari website
+        // === MODE SELECTION ===
+        if (direction == "autonomous") {
+            // ==============================
+            // MODE AUTONOMOUS (Random Bounce + Spiral)
+            // ==============================
+            if (!_wasAutonomous) {
+                Serial.println("==================");
+                Serial.println("[ROBOT] MODE = AUTONOMOUS CLEANING");
+                Serial.print("[ROBOT] Vacuum Power = ");
+                Serial.println(targetPower);
+                Serial.println("==================");
+                _cleaner.start();
+                _wasAutonomous = true;
+            }
+            
+            // Update cleaning algorithm (handles sensors + wheel control)
+            _cleaner.update();
+            
         } else {
-            // Default: forward (jika direction kosong, "", atau "forward")
-            wheels.moveForward();
+            // ==============================
+            // MODE MANUAL (dikontrol dari website)
+            // ==============================
+            if (_wasAutonomous) {
+                // Baru pindah dari autonomous ke manual
+                _cleaner.stop();
+                _wasAutonomous = false;
+                Serial.println("[ROBOT] Switched from AUTONOMOUS to MANUAL");
+            }
+            
+            // === SAFETY: Cliff check di mode manual juga ===
+            sensors.readCliffs();
+            if (sensors.isCliffDetected()) {
+                Serial.println("!!! [ROBOT] CLIFF DETECTED IN MANUAL MODE - STOPPING !!!");
+                wheels.stop();
+                return;  // Jangan gerak sampai cliff hilang
+            }
+            
+            // Manual direction control
+            static bool wasWorking = false;
+            if (!wasWorking) {
+                Serial.println("==================");
+                Serial.println("[ROBOT] MODE = MANUAL CONTROL");
+                Serial.print("[ROBOT] Direction = '");
+                Serial.print(direction);
+                Serial.println("'");
+                Serial.println("==================");
+                wasWorking = true;
+            }
+            
+            if (direction == "backward") {
+                wheels.moveBackward();
+            } else if (direction == "left") {
+                wheels.turnLeft();
+            } else if (direction == "right") {
+                wheels.turnRight();
+            } else if (direction == "stop") {
+                wheels.stop();
+            } else {
+                // Default: forward
+                wheels.moveForward();
+            }
         }
         
     } else {
@@ -113,10 +138,13 @@ void RobotController::update() {
             lastLoggedState = targetState;
         }
         
-        stopAll();
+        // Stop autonomous if it was running
+        if (_wasAutonomous) {
+            _cleaner.stop();
+            _wasAutonomous = false;
+        }
         
-        // Reset working flag when not working
-        // (Need extern bool)
+        stopAll();
     }
 }
 
@@ -124,17 +152,16 @@ void RobotController::stopAll() {
     wheels.stop();
     brush.stop();
     vacuum.stop();
-    Serial.println("[ROBOT] >>> stopAll() executed <<<");
 }
 
 void RobotController::handleCleaning() {
-    // Not used in simplified version
+    // Handled by CleaningAlgorithm
 }
 
 void RobotController::handleReturning() {
-    // Not used in simplified version
+    // Not used - no position tracking available
 }
 
 void RobotController::checkSafety() {
-    // Not used in simplified version
+    // Cliff safety is handled inline in update() and by CleaningAlgorithm
 }

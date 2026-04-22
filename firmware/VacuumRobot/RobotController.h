@@ -2,6 +2,7 @@
 #define ROBOT_CONTROLLER_H
 
 #include <Arduino.h>
+#include "CleaningAlgorithm.h"
 
 class RobotController {
 public:
@@ -19,6 +20,10 @@ private:
     // For change detection and logging
     String _prevState = "";
     int _prevPowerValue = 0;
+    
+    // Autonomous cleaning algorithm
+    CleaningAlgorithm _cleaner;
+    bool _wasAutonomous = false;
 };
 
 #endif
