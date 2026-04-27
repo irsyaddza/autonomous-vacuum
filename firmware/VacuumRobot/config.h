@@ -36,7 +36,7 @@
 #define PIN_BATTERY_ADC     36  // VP pin
 
 // Function Buttons
-#define PIN_WIFI_RESET      0   // Tombol BOOT bawaan ESP32. Tekan tahan 5 detik.
+#define PIN_WIFI_RESET      4   // Tombol tambahan untuk ESP32. Tekan tahan 5 detik.
 
 // Buzzer (Active Buzzer)
 #define PIN_BUZZER          27  // IO27 → Buzzer untuk feedback WiFi reset
@@ -59,5 +59,25 @@
 #define VACUUM_POWER_NORMAL 200     // Default PWM untuk vacuum NORMAL mode (0-255)
 #define BRUSH_SPEED         150     // PWM untuk brush motor (0-255)
 #define WHEEL_MOTOR_SPEED   170     // Default PWM untuk drive wheel motor (0-255)
+
+// ===== CLEANING ALGORITHM SETTINGS =====
+// Obstacle avoidance timing
+#define BACKUP_DURATION         300     // ms - durasi mundur saat ada obstacle
+#define TURN_DURATION_MIN       300     // ms - durasi belok minimum
+#define TURN_DURATION_MAX       800     // ms - durasi belok maksimum
+#define TURN_DURATION_SMALL     200     // ms - belok kecil (45°) untuk obstacle samping
+
+// Cliff avoidance timing (prioritas lebih tinggi)
+#define CLIFF_BACKUP_DURATION   400     // ms - durasi mundur saat cliff (lebih lama)
+#define CLIFF_TURN_DURATION     600     // ms - durasi putar 180° saat cliff
+
+// Spiral pattern settings
+#define SPIRAL_INITIAL_DURATION 500     // ms - durasi lurus awal spiral
+#define SPIRAL_INCREMENT        100     // ms - penambahan durasi setiap putaran spiral
+#define SPIRAL_MAX_DURATION     3000    // ms - durasi lurus maksimum sebelum pindah ke random bounce
+#define SPIRAL_TURN_DURATION    250     // ms - durasi belok 90° saat spiral
+
+// Sensor debounce
+#define SENSOR_DEBOUNCE_COUNT   2       // Jumlah consecutive reads untuk konfirmasi sensor
 
 #endif
