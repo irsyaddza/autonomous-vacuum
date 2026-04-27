@@ -36,7 +36,7 @@
 #define PIN_BATTERY_ADC     36  // VP pin
 
 // Function Buttons
-#define PIN_WIFI_RESET      0   // Tombol BOOT bawaan ESP32. Tekan tahan 5 detik.
+#define PIN_WIFI_RESET      4   // Tombol tambahan untuk ESP32. Tekan tahan 5 detik.
 
 // Buzzer (Active Buzzer)
 #define PIN_BUZZER          27  // IO27 → Buzzer untuk feedback WiFi reset
