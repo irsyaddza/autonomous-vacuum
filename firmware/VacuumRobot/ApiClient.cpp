@@ -10,6 +10,7 @@ WebServer server(ESP32_HTTP_PORT);
 
 void ApiClient::connectWiFi() {
     initBuzzer();
+    pinMode(PIN_WIFI_RESET, INPUT_PULLUP);
     
     // Load API URL from NVS Preferences
     preferences.begin("vacuum-app", false);
