@@ -65,8 +65,8 @@
                     </div>
                     
                     <div class="d-flex justify-content-between align-items-center small text-secondary">
-                        <span><i class="far fa-clock me-1"></i> <span id="batteryEstimate">Est: 3h 45m</span></span>
-                        <span>12.5 V</span>
+                        <span><i class="far fa-clock me-1"></i> <span id="batteryEstimate">Est: —</span></span>
+                        <span><i class="fas fa-bolt me-1"></i> <span id="batteryVoltage">— V</span></span>
                     </div>
                 </div>
             </div>
@@ -373,10 +373,17 @@
         function updateBatteryUI(data) {
             const percent = data.battery_percent || data.percent;
             const estimate = data.estimated_time;
+            const voltage = data.battery_voltage || data.voltage;
             
             document.getElementById('batteryPercent').textContent = `${percent}%`;
             document.getElementById('batteryEstimate').textContent = estimate ? `Est: ${estimate}` : '';
             
+            // Update voltage display
+            if (voltage) {
+                document.getElementById('batteryVoltage').textContent = `${parseFloat(voltage).toFixed(1)} V`;
+            }
+            
+            // Update progress bar
             const bar = document.getElementById('batteryBar');
             bar.style.width = `${percent}%`;
             
@@ -384,6 +391,17 @@
             if(percent > 50) bar.classList.add('bg-success');
             else if(percent > 20) bar.classList.add('bg-warning');
             else bar.classList.add('bg-danger');
+            
+            // Update battery icon based on level
+            const iconEl = document.querySelector('.card .fa-battery-three-quarters');
+            if (iconEl) {
+                iconEl.className = 'fas fa-lg';
+                if (percent > 75) iconEl.classList.add('fa-battery-full');
+                else if (percent > 50) iconEl.classList.add('fa-battery-three-quarters');
+                else if (percent > 25) iconEl.classList.add('fa-battery-half');
+                else if (percent > 10) iconEl.classList.add('fa-battery-quarter');
+                else iconEl.classList.add('fa-battery-empty');
+            }
         }
 
         function updatePowerModeUI(mode) {
