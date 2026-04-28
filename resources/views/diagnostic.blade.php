@@ -173,8 +173,101 @@
         </div>
     </div>
 
-    <!-- Raw JSON Log -->
+    <!-- Timing Settings Panel -->
     <div class="card mt-4 stagger-4">
+        <div class="card-header py-3 d-flex align-items-center justify-content-between">
+            <div>
+                <i class="fas fa-sliders-h me-2 text-info"></i>
+                <span class="fw-bold text-white">Timing Settings</span>
+                <small class="text-secondary ms-2">(Live tuning tanpa flash ulang)</small>
+            </div>
+            <div class="d-flex gap-2">
+                <button class="btn btn-sm btn-outline-secondary" onclick="resetTimingDefaults()">
+                    <i class="fas fa-undo me-1"></i>Reset Default
+                </button>
+                <button class="btn btn-sm btn-primary" onclick="saveTimingSettings()">
+                    <i class="fas fa-save me-1"></i>Save to ESP32
+                </button>
+            </div>
+        </div>
+        <div class="card-body p-4">
+            <div class="row g-4">
+                <!-- Obstacle Avoidance -->
+                <div class="col-md-4">
+                    <h6 class="text-warning mb-3"><i class="fas fa-shield-alt me-1"></i> Obstacle Avoidance</h6>
+                    <div class="mb-3">
+                        <label class="form-label small text-secondary">Mundur (ms)</label>
+                        <input type="number" class="form-control form-control-sm bg-dark text-white border-secondary" id="t_backupDuration" min="100" max="2000" step="50">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small text-secondary">Belok Min (ms)</label>
+                        <input type="number" class="form-control form-control-sm bg-dark text-white border-secondary" id="t_turnDurationMin" min="100" max="2000" step="50">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small text-secondary">Belok Max (ms)</label>
+                        <input type="number" class="form-control form-control-sm bg-dark text-white border-secondary" id="t_turnDurationMax" min="200" max="3000" step="50">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small text-secondary">Belok Kecil (ms)</label>
+                        <input type="number" class="form-control form-control-sm bg-dark text-white border-secondary" id="t_turnDurationSmall" min="50" max="1000" step="50">
+                    </div>
+                </div>
+                <!-- Cliff Avoidance -->
+                <div class="col-md-4">
+                    <h6 class="text-danger mb-3"><i class="fas fa-mountain me-1"></i> Cliff Avoidance</h6>
+                    <div class="mb-3">
+                        <label class="form-label small text-secondary">Mundur Cliff (ms)</label>
+                        <input type="number" class="form-control form-control-sm bg-dark text-white border-secondary" id="t_cliffBackupDuration" min="200" max="2000" step="50">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small text-secondary">Putar 180° (ms)</label>
+                        <input type="number" class="form-control form-control-sm bg-dark text-white border-secondary" id="t_cliffTurnDuration" min="300" max="3000" step="50">
+                    </div>
+                    <h6 class="text-primary mb-3 mt-4"><i class="fas fa-exclamation-triangle me-1"></i> Stuck Detection</h6>
+                    <div class="mb-3">
+                        <label class="form-label small text-secondary">Jumlah Obstacle</label>
+                        <input type="number" class="form-control form-control-sm bg-dark text-white border-secondary" id="t_stuckObstacleCount" min="2" max="10" step="1">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small text-secondary">Jendela Waktu (ms)</label>
+                        <input type="number" class="form-control form-control-sm bg-dark text-white border-secondary" id="t_stuckTimeWindow" min="1000" max="10000" step="500">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small text-secondary">Escape Turn (ms)</label>
+                        <input type="number" class="form-control form-control-sm bg-dark text-white border-secondary" id="t_escapeTurnDuration" min="500" max="3000" step="100">
+                    </div>
+                </div>
+                <!-- Spiral Pattern -->
+                <div class="col-md-4">
+                    <h6 class="text-success mb-3"><i class="fas fa-sync-alt me-1"></i> Spiral Pattern</h6>
+                    <div class="mb-3">
+                        <label class="form-label small text-secondary">Durasi Awal (ms)</label>
+                        <input type="number" class="form-control form-control-sm bg-dark text-white border-secondary" id="t_spiralInitialDuration" min="200" max="2000" step="50">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small text-secondary">Increment (ms)</label>
+                        <input type="number" class="form-control form-control-sm bg-dark text-white border-secondary" id="t_spiralIncrement" min="50" max="500" step="25">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small text-secondary">Max Durasi (ms)</label>
+                        <input type="number" class="form-control form-control-sm bg-dark text-white border-secondary" id="t_spiralMaxDuration" min="1000" max="10000" step="500">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small text-secondary">Belok Spiral (ms)</label>
+                        <input type="number" class="form-control form-control-sm bg-dark text-white border-secondary" id="t_spiralTurnDuration" min="100" max="1000" step="50">
+                    </div>
+                </div>
+            </div>
+            <div class="alert alert-dark bg-opacity-25 border-0 mt-3 mb-0 small">
+                <i class="fas fa-info-circle me-1 text-info"></i>
+                Perubahan langsung berlaku di ESP32 <strong>tanpa flash ulang</strong>. Nilai akan kembali ke default setelah ESP32 di-restart.
+                Klik <strong>Reset Default</strong> untuk mengembalikan semua ke nilai di <code>config.h</code>.
+            </div>
+        </div>
+    </div>
+
+    <!-- Raw JSON Log -->
+    <div class="card mt-4 stagger-5">
         <div class="card-header py-3 d-flex align-items-center justify-content-between">
             <div>
                 <i class="fas fa-terminal me-2 text-success"></i>
@@ -310,6 +403,11 @@
                 if (res.success) {
                     updateSensorUI(res);
                     updateStatusBar(res);
+                    // Load timing settings on first successful poll
+                    if (res.timing && !timingLoaded) {
+                        populateTimingFields(res.timing);
+                        timingLoaded = true;
+                    }
                     addLog(JSON.stringify(res));
                 }
             } catch (err) {
@@ -390,6 +488,74 @@
         function clearLog() {
             logLines = [];
             document.getElementById('jsonLog').textContent = 'Log cleared.';
+        }
+
+        // ===== Timing Settings =====
+        let timingLoaded = false;
+        const timingKeys = [
+            'backupDuration', 'turnDurationMin', 'turnDurationMax', 'turnDurationSmall',
+            'cliffBackupDuration', 'cliffTurnDuration',
+            'spiralInitialDuration', 'spiralIncrement', 'spiralMaxDuration', 'spiralTurnDuration',
+            'stuckObstacleCount', 'stuckTimeWindow', 'escapeTurnDuration'
+        ];
+
+        function populateTimingFields(timing) {
+            timingKeys.forEach(key => {
+                const el = document.getElementById(`t_${key}`);
+                if (el && timing[key] !== undefined) {
+                    el.value = timing[key];
+                }
+            });
+        }
+
+        async function saveTimingSettings() {
+            if (!esp32Ip) {
+                addLog('ERROR: ESP32 tidak terhubung');
+                return;
+            }
+
+            const settings = {};
+            timingKeys.forEach(key => {
+                const el = document.getElementById(`t_${key}`);
+                if (el && el.value) {
+                    settings[key] = parseInt(el.value);
+                }
+            });
+
+            try {
+                const res = await $.ajax({
+                    url: `http://${esp32Ip}/settings`,
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify(settings),
+                    timeout: 3000
+                });
+                addLog('Settings SAVED: ' + JSON.stringify(settings));
+                timingLoaded = false; // Reload on next poll
+            } catch (err) {
+                addLog('ERROR: Gagal menyimpan settings');
+            }
+        }
+
+        async function resetTimingDefaults() {
+            if (!esp32Ip) {
+                addLog('ERROR: ESP32 tidak terhubung');
+                return;
+            }
+
+            try {
+                await $.ajax({
+                    url: `http://${esp32Ip}/settings`,
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify({ resetDefaults: true }),
+                    timeout: 3000
+                });
+                addLog('Settings RESET to defaults');
+                timingLoaded = false; // Reload on next poll
+            } catch (err) {
+                addLog('ERROR: Gagal reset settings');
+            }
         }
 
         // ===== Init =====

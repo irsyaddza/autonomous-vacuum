@@ -7,6 +7,7 @@
 #include "BatteryMonitor.h"
 #include "ApiClient.h"
 #include "RobotController.h"
+#include "TimingSettings.h"
 
 // Global Objects
 BrushMotor brush;
@@ -16,6 +17,7 @@ SensorArray sensors;
 BatteryMonitor battery;
 ApiClient api;
 RobotController robot;
+TimingSettings timing;
 
 void setup() {
   Serial.begin(115200);

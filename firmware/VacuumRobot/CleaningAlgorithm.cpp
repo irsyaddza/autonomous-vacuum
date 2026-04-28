@@ -1,5 +1,6 @@
 #include "CleaningAlgorithm.h"
 #include "config.h"
+#include "TimingSettings.h"
 #include "SensorArray.h"
 #include "WheelMotor.h"
 #include "BrushMotor.h"
@@ -24,7 +25,7 @@ void CleaningAlgorithm::start() {
     if (_active) return;
     
     _active = true;
-    _spiralForwardDuration = SPIRAL_INITIAL_DURATION;
+    _spiralForwardDuration = timing.spiralInitialDuration;
     _spiralTurnRight = true;
     
     // Mulai dengan fase spiral
@@ -126,17 +127,17 @@ void CleaningAlgorithm::_handleSpiral() {
         }
         
         // Tunggu belok selesai
-        if (elapsed < _spiralForwardDuration + SPIRAL_TURN_DURATION) {
+        if (elapsed < _spiralForwardDuration + (unsigned long)timing.spiralTurnDuration) {
             // Still turning, wait
             return;
         }
         
         // Belok selesai, tambah durasi lurus untuk spiral mengembang
-        _spiralForwardDuration += SPIRAL_INCREMENT;
+        _spiralForwardDuration += timing.spiralIncrement;
         _spiralTurnRight = !_spiralTurnRight;  // Alternate direction for spiral
         
         // Cek apakah spiral sudah cukup besar → pindah ke Random Bounce
-        if (_spiralForwardDuration >= SPIRAL_MAX_DURATION) {
+        if (_spiralForwardDuration >= (unsigned long)timing.spiralMaxDuration) {
             Serial.println("[CLEAN] Spiral complete → Phase 2: Random Bounce");
             _setState(CLEAN_FORWARD);
             wheels.moveForward();
@@ -176,7 +177,7 @@ void CleaningAlgorithm::_handleForward() {
 void CleaningAlgorithm::_handleBackupObstacle() {
     unsigned long elapsed = millis() - _stateStartTime;
     
-    if (elapsed < BACKUP_DURATION) {
+    if (elapsed < (unsigned long)timing.backupDuration) {
         wheels.moveBackward();
     } else {
         // Mundur selesai → mulai belok
@@ -191,15 +192,15 @@ void CleaningAlgorithm::_handleBackupObstacle() {
         unsigned long duration;
         if (front && left && right) {
             // Semua sisi terblokir (pojok) → putar besar
-            duration = TURN_DURATION_MAX;
+            duration = timing.turnDurationMax;
         } else if (front) {
             // Depan terblokir → belok sedang-besar
-            duration = random(TURN_DURATION_MIN, TURN_DURATION_MAX + 1);
+            duration = random(timing.turnDurationMin, timing.turnDurationMax + 1);
         } else if (left != right) {
             // Hanya satu sisi terblokir, depan clear → belok kecil
-            duration = TURN_DURATION_SMALL;
+            duration = timing.turnDurationSmall;
         } else {
-            duration = random(TURN_DURATION_MIN, TURN_DURATION_MAX + 1);
+            duration = random(timing.turnDurationMin, timing.turnDurationMax + 1);
         }
         
         _startTurn(dir, duration);
@@ -216,7 +217,7 @@ void CleaningAlgorithm::_handleBackupObstacle() {
 void CleaningAlgorithm::_handleBackupCliff() {
     unsigned long elapsed = millis() - _stateStartTime;
     
-    if (elapsed < CLIFF_BACKUP_DURATION) {
+    if (elapsed < (unsigned long)timing.cliffBackupDuration) {
         wheels.moveBackward();
     } else {
         // Cliff → selalu putar 180° (durasi lebih lama)
@@ -231,7 +232,7 @@ void CleaningAlgorithm::_handleBackupCliff() {
             dir = (random(2) == 0) ? TURN_LEFT : TURN_RIGHT; // Random
         }
         
-        _startTurn(dir, CLIFF_TURN_DURATION);
+        _startTurn(dir, timing.cliffTurnDuration);
         
         Serial.print("[CLEAN] Cliff backup done → Turn ");
         Serial.println(dir == TURN_LEFT ? "LEFT 180°" : "RIGHT 180°");
@@ -312,23 +313,23 @@ void CleaningAlgorithm::_startBackupObstacle() {
     wheels.stop();
     
     // Stuck detection: jika terlalu sering obstacle dalam waktu singkat
-    if (millis() - _lastObstacleTime < STUCK_TIME_WINDOW) {
+    if (millis() - _lastObstacleTime < (unsigned long)timing.stuckTimeWindow) {
         _obstacleCount++;
     } else {
         _obstacleCount = 1;
     }
     _lastObstacleTime = millis();
     
-    if (_obstacleCount >= STUCK_OBSTACLE_COUNT) {
+    if (_obstacleCount >= timing.stuckObstacleCount) {
         // Robot terjebak! Putar besar untuk escape
         Serial.print("[CLEAN] !!! STUCK DETECTED (");
-        Serial.print(STUCK_OBSTACLE_COUNT);
+        Serial.print(timing.stuckObstacleCount);
         Serial.print(" obstacles in ");
-        Serial.print(STUCK_TIME_WINDOW / 1000);
+        Serial.print(timing.stuckTimeWindow / 1000);
         Serial.println("s) → Escape turn");
         _obstacleCount = 0;
         TurnDirection escapeDir = (random(2) == 0) ? TURN_LEFT : TURN_RIGHT;
-        _startTurn(escapeDir, ESCAPE_TURN_DURATION);
+        _startTurn(escapeDir, timing.escapeTurnDuration);
         return;
     }
     
@@ -346,9 +347,9 @@ void CleaningAlgorithm::_startTurn(TurnDirection dir, unsigned long duration) {
     _setState(CLEAN_TURNING);
 }
 
-// Random turn duration antara TURN_DURATION_MIN dan TURN_DURATION_MAX
+// Random turn duration antara turnDurationMin dan turnDurationMax
 unsigned long CleaningAlgorithm::_randomTurnDuration() {
-    return random(TURN_DURATION_MIN, TURN_DURATION_MAX + 1);
+    return random(timing.turnDurationMin, timing.turnDurationMax + 1);
 }
 
 // Tentukan arah belok berdasarkan sensor mana yang triggered

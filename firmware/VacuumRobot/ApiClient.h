@@ -38,6 +38,7 @@ private:
     void _handleCommand();       // Handler for POST /command
     void _handleStatus();        // Handler for GET /status
     void _handleDiagnostic();    // Handler for GET /diagnostic
+    void _handleSettings();      // Handler for POST /settings
     void _handleCorsOptions();   // Handler for OPTIONS (CORS preflight)
     void _addCorsHeaders();      // Add CORS headers to response
     

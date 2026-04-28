@@ -3,6 +3,7 @@
 #include <ArduinoJson.h>
 #include "SensorArray.h"
 #include "BatteryMonitor.h"
+#include "TimingSettings.h"
 
 extern SensorArray sensors;
 extern BatteryMonitor battery;
@@ -338,7 +339,7 @@ void ApiClient::_handleDiagnostic() {
     float voltage = battery.getVoltage();
     int percent = battery.getPercentage();
     
-    DynamicJsonDocument doc(512);
+    DynamicJsonDocument doc(1024);
     doc["success"] = true;
     
     // Raw digital values (0 or 1)
@@ -377,9 +378,61 @@ void ApiClient::_handleDiagnostic() {
     // Uptime
     doc["uptime_ms"] = millis();
     
+    // Current timing settings
+    JsonObject ts = doc.createNestedObject("timing");
+    ts["backupDuration"] = timing.backupDuration;
+    ts["turnDurationMin"] = timing.turnDurationMin;
+    ts["turnDurationMax"] = timing.turnDurationMax;
+    ts["turnDurationSmall"] = timing.turnDurationSmall;
+    ts["cliffBackupDuration"] = timing.cliffBackupDuration;
+    ts["cliffTurnDuration"] = timing.cliffTurnDuration;
+    ts["spiralInitialDuration"] = timing.spiralInitialDuration;
+    ts["spiralIncrement"] = timing.spiralIncrement;
+    ts["spiralMaxDuration"] = timing.spiralMaxDuration;
+    ts["spiralTurnDuration"] = timing.spiralTurnDuration;
+    ts["stuckObstacleCount"] = timing.stuckObstacleCount;
+    ts["stuckTimeWindow"] = timing.stuckTimeWindow;
+    ts["escapeTurnDuration"] = timing.escapeTurnDuration;
+    
     String response;
     serializeJson(doc, response);
     server.send(200, "application/json", response);
+}
+
+void ApiClient::_handleSettings() {
+    _addCorsHeaders();
+    
+    String body = server.arg("plain");
+    DynamicJsonDocument doc(512);
+    DeserializationError err = deserializeJson(doc, body);
+    
+    if (err) {
+        server.send(400, "application/json", "{\"success\":false,\"error\":\"Invalid JSON\"}");
+        return;
+    }
+    
+    // Update hanya field yang dikirim (partial update)
+    if (doc.containsKey("backupDuration"))      timing.backupDuration = doc["backupDuration"];
+    if (doc.containsKey("turnDurationMin"))      timing.turnDurationMin = doc["turnDurationMin"];
+    if (doc.containsKey("turnDurationMax"))      timing.turnDurationMax = doc["turnDurationMax"];
+    if (doc.containsKey("turnDurationSmall"))    timing.turnDurationSmall = doc["turnDurationSmall"];
+    if (doc.containsKey("cliffBackupDuration"))  timing.cliffBackupDuration = doc["cliffBackupDuration"];
+    if (doc.containsKey("cliffTurnDuration"))    timing.cliffTurnDuration = doc["cliffTurnDuration"];
+    if (doc.containsKey("spiralInitialDuration")) timing.spiralInitialDuration = doc["spiralInitialDuration"];
+    if (doc.containsKey("spiralIncrement"))      timing.spiralIncrement = doc["spiralIncrement"];
+    if (doc.containsKey("spiralMaxDuration"))    timing.spiralMaxDuration = doc["spiralMaxDuration"];
+    if (doc.containsKey("spiralTurnDuration"))   timing.spiralTurnDuration = doc["spiralTurnDuration"];
+    if (doc.containsKey("stuckObstacleCount"))   timing.stuckObstacleCount = doc["stuckObstacleCount"];
+    if (doc.containsKey("stuckTimeWindow"))      timing.stuckTimeWindow = doc["stuckTimeWindow"];
+    if (doc.containsKey("escapeTurnDuration"))   timing.escapeTurnDuration = doc["escapeTurnDuration"];
+    
+    // Reset ke default jika diminta
+    if (doc.containsKey("resetDefaults") && doc["resetDefaults"] == true) {
+        timing.resetDefaults();
+    }
+    
+    Serial.println("[API] Timing settings updated from web");
+    server.send(200, "application/json", "{\"success\":true,\"message\":\"Settings updated\"}");
 }
 
 void ApiClient::startWebServer() {
@@ -387,15 +440,17 @@ void ApiClient::startWebServer() {
     server.on("/command", HTTP_OPTIONS, [this]() { _handleCorsOptions(); });
     server.on("/status", HTTP_OPTIONS, [this]() { _handleCorsOptions(); });
     server.on("/diagnostic", HTTP_OPTIONS, [this]() { _handleCorsOptions(); });
+    server.on("/settings", HTTP_OPTIONS, [this]() { _handleCorsOptions(); });
     
     // Actual endpoints
     server.on("/command", HTTP_POST, [this]() { _handleCommand(); });
     server.on("/status", HTTP_GET, [this]() { _handleStatus(); });
     server.on("/diagnostic", HTTP_GET, [this]() { _handleDiagnostic(); });
+    server.on("/settings", HTTP_POST, [this]() { _handleSettings(); });
     
     server.begin();
     Serial.println(">>> HTTP Server started on port " + String(ESP32_HTTP_PORT));
-    Serial.println(">>> Endpoints: POST /command, GET /status, GET /diagnostic");
+    Serial.println(">>> Endpoints: POST /command, GET /status, GET /diagnostic, POST /settings");
 }
 
 void ApiClient::handleWebServer() {
