@@ -509,7 +509,7 @@ void ApiClient::sendBattery(int percent, float voltage) {
     DynamicJsonDocument doc(200);
     doc["battery_percent"] = percent;
     doc["battery_voltage"] = voltage;
-    doc["estimated_time"] = String(percent / 10.0) + "h";
+    doc["estimated_time"] = battery.getEstimatedTime();
     
     String json;
     serializeJson(doc, json);
