@@ -4,77 +4,77 @@
 void BatteryMonitor::begin() {
     pinMode(PIN_BATTERY_ADC, INPUT);
     
-    // Pre-fill buffer dengan pembacaan awal agar smoothing langsung efektif
-    // Tanpa ini, beberapa detik pertama nilainya akan fluktuatif
-    for (int i = 0; i < BATTERY_SAMPLE_COUNT; i++) {
-        _addSample(_readSingleVoltage());
-        delay(10);
-    }
+    // Inisialisasi stable voltage dengan pembacaan pertama
+    _stableVoltage = _readFilteredVoltage();
+    _initialized = true;
     
     Serial.print("[BATTERY] Monitor initialized. Voltage: ");
-    Serial.print(getVoltage(), 1);
+    Serial.print(_stableVoltage, 1);
     Serial.print("V (");
     Serial.print(getPercentage());
     Serial.println("%)");
 }
 
-float BatteryMonitor::getVoltage() {
-    // Take 10 samples to average out the noise
+// ===== PEMBACAAN ADC DENGAN MULTI-SAMPLE (filter noise) =====
+// Mengambil BATTERY_ADC_SAMPLES pembacaan dan merata-ratakannya
+// Ini menghilangkan noise listrik, BUKAN voltage sag
+float BatteryMonitor::_readFilteredVoltage() {
     long sum = 0;
-    for(int i = 0; i < 10; i++) {
+    for (int i = 0; i < BATTERY_ADC_SAMPLES; i++) {
         sum += analogRead(PIN_BATTERY_ADC);
-        delay(2);
+        delayMicroseconds(500);  // Jeda antar sampel ADC
     }
-    float raw = sum / 10.0;
+    float avgRaw = (float)sum / BATTERY_ADC_SAMPLES;
     
-    // ESP32 ADC is 12-bit (0-4095)
-    // 3.3V ref
-    float voltage = (raw / 4095.0) * 3.3 * _calibrationFactor;
+    // ESP32 ADC 12-bit (0-4095), 3.3V reference
+    float voltage = (avgRaw / 4095.0) * 3.3 * _calibrationFactor;
     return voltage;
 }
 
-// Tambahkan sample ke buffer circular
-void BatteryMonitor::_addSample(float voltage) {
-    _samples[_sampleIndex] = voltage;
-    _sampleIndex = (_sampleIndex + 1) % BATTERY_SAMPLE_COUNT;
-    
-    if (!_bufferFull) {
-        _sampleCount++;
-        if (_sampleCount >= BATTERY_SAMPLE_COUNT) {
-            _bufferFull = true;
-        }
-    }
-}
-
-// Hitung rata-rata dari semua sampel di buffer
-float BatteryMonitor::_getSmoothedVoltage() {
-    int count = _bufferFull ? BATTERY_SAMPLE_COUNT : _sampleCount;
-    if (count == 0) return 0.0;
-    
-    float sum = 0.0;
-    for (int i = 0; i < count; i++) {
-        sum += _samples[i];
-    }
-    return sum / count;
-}
-
-// Public: Baca dan return tegangan yang sudah di-smoothing
-// Setiap panggilan menambah 1 sampel baru ke buffer
+// ===== PEAK-HOLD WITH SLOW DECAY =====
+// Teknik yang dipakai produk baterai komersial:
+//
+// - Saat tegangan NAIK (motor mati, baterai pulih):
+//   → Langsung adopt nilai tinggi (responsive)
+//
+// - Saat tegangan TURUN (motor nyala, sag terjadi):
+//   → Turunkan SANGAT PERLAHAN (ignore sag)
+//
+// Hasilnya: voltage yang ditampilkan stabil dan merepresentasikan
+// kapasitas baterai sebenarnya, bukan tegangan sesaat saat motor sedang menarik arus.
+//
 float BatteryMonitor::getVoltage() {
-    _addSample(_readSingleVoltage());
-    return _getSmoothedVoltage();
+    float currentReading = _readFilteredVoltage();
+    
+    if (!_initialized) {
+        _stableVoltage = currentReading;
+        _initialized = true;
+        return _stableVoltage;
+    }
+    
+    if (currentReading >= _stableVoltage) {
+        // Tegangan naik atau sama → langsung adopt
+        // Ini terjadi saat motor mati dan baterai pulih ke OCV
+        _stableVoltage = currentReading;
+    } else {
+        // Tegangan lebih rendah (sag karena motor)
+        // → Turunkan perlahan, jangan langsung ikut turun
+        // Formula: stable = stable * (1 - rate) + reading * rate
+        _stableVoltage = _stableVoltage * (1.0 - BATTERY_DECAY_RATE) 
+                       + currentReading * BATTERY_DECAY_RATE;
+    }
+    
+    return _stableVoltage;
 }
 
-// Public: Baca tegangan mentah sekali (untuk halaman diagnostic)
+// Tegangan mentah saat ini (untuk halaman diagnostic)
 float BatteryMonitor::getRawVoltage() {
-    return _readSingleVoltage();
+    return _readFilteredVoltage();
 }
 
-// Hitung persentase baterai berdasarkan tegangan
-// Menggunakan kurva linear sederhana: 9.0V (0%) → 12.6V (100%)
+// Hitung persentase baterai dari stable voltage
 int BatteryMonitor::getPercentage() {
     float v = getVoltage();
-    // Konversi ke integer untuk map(): 9.0V = 900, 12.6V = 1260
     int vInt = (int)(v * 100);
     int minV = (int)(BATTERY_VOLTAGE_MIN * 100);
     int maxV = (int)(BATTERY_VOLTAGE_MAX * 100);
@@ -83,11 +83,10 @@ int BatteryMonitor::getPercentage() {
 }
 
 // Estimasi sisa waktu berdasarkan persentase
-// Format: "Xh Ym" atau "< 10m" untuk baterai hampir habis
 String BatteryMonitor::getEstimatedTime() {
     int pct = getPercentage();
     
-    // Estimasi linear: runtime penuh * persentase / 100
+    // Estimasi linear: runtime penuh × persentase / 100
     int totalMinutes = (BATTERY_FULL_RUNTIME_MIN * pct) / 100;
     
     if (totalMinutes <= 0) {
