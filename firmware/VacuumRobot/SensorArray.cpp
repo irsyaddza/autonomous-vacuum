@@ -1,7 +1,13 @@
 #include "SensorArray.h"
 #include "config.h"
+#include "driver/gpio.h"
 
 void SensorArray::begin() {
+    // GPIO 16 & 17 adalah default pin UART2 (Serial2) pada ESP32
+    // Harus di-reset dulu agar bisa dipakai sebagai input digital biasa
+    gpio_reset_pin(GPIO_NUM_16);
+    gpio_reset_pin(GPIO_NUM_17);
+    
     // Obstacle Avoidance Sensors (IR1, IR2, IR3)
     pinMode(PIN_IR_LEFT, INPUT);
     pinMode(PIN_IR_FRONT, INPUT);
@@ -29,7 +35,9 @@ bool SensorArray::_debounce(bool rawReading, int &counter, bool &state) {
 }
 
 bool SensorArray::readObstacles() {
-    // IR Sensors: LOW = obstacle detected (Active Low)
+    // IR Sensors: LOW = obstacle detected (Active Low output)
+    // LED ON = obstacle present, but output pin goes LOW
+    // HIGH = no obstacle (LED off, output pin HIGH)
     bool rawLeft  = (digitalRead(PIN_IR_LEFT) == LOW);
     bool rawFront = (digitalRead(PIN_IR_FRONT) == LOW);
     bool rawRight = (digitalRead(PIN_IR_RIGHT) == LOW);
@@ -43,11 +51,11 @@ bool SensorArray::readObstacles() {
 }
 
 bool SensorArray::readCliffs() {
-    // Cliff sensors: LOW = cliff detected (no reflection from surface)
-    // HIGH = surface present (IR reflected back)
-    bool rawLeft  = (digitalRead(PIN_CLIFF_LEFT) == LOW);
-    bool rawFront = (digitalRead(PIN_CLIFF_FRONT) == LOW);
-    bool rawRight = (digitalRead(PIN_CLIFF_RIGHT) == LOW);
+    // Cliff sensors: HIGH = cliff detected (no reflection from surface)
+    // LOW = surface present (IR reflected back from floor)
+    bool rawLeft  = (digitalRead(PIN_CLIFF_LEFT) == HIGH);
+    bool rawFront = (digitalRead(PIN_CLIFF_FRONT) == HIGH);
+    bool rawRight = (digitalRead(PIN_CLIFF_RIGHT) == HIGH);
     
     // Apply debounce
     _debounce(rawLeft,  _cliffLeftCount,  _cliffLeft);

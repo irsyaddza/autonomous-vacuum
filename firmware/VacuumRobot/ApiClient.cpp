@@ -1,6 +1,11 @@
 #include "ApiClient.h"
 #include "config.h"
 #include <ArduinoJson.h>
+#include "SensorArray.h"
+#include "BatteryMonitor.h"
+
+extern SensorArray sensors;
+extern BatteryMonitor battery;
 #include <WiFiManager.h>
 
 // Global WebServer instance
@@ -255,8 +260,10 @@ void ApiClient::_handleCommand() {
     // Map commands to states
     if (command == "start") {
         lastState = "working";
+        lastDirection = "autonomous";
     } else if (command == "stop") {
         lastState = "stopping";
+        lastDirection = "forward";
     } else if (command == "return_home") {
         lastState = "returning";
     } else if (command == "eco") {
@@ -316,18 +323,79 @@ void ApiClient::_handleStatus() {
     server.send(200, "application/json", response);
 }
 
+void ApiClient::_handleDiagnostic() {
+    _addCorsHeaders();
+    
+    // Read raw digital values from all 6 sensors
+    int obsL = digitalRead(PIN_IR_LEFT);
+    int obsF = digitalRead(PIN_IR_FRONT);
+    int obsR = digitalRead(PIN_IR_RIGHT);
+    int clfL = digitalRead(PIN_CLIFF_LEFT);
+    int clfF = digitalRead(PIN_CLIFF_FRONT);
+    int clfR = digitalRead(PIN_CLIFF_RIGHT);
+    
+    // Read battery
+    float voltage = battery.getVoltage();
+    int percent = battery.getPercentage();
+    
+    DynamicJsonDocument doc(512);
+    doc["success"] = true;
+    
+    // Raw digital values (0 or 1)
+    JsonObject obs = doc.createNestedObject("obstacle_raw");
+    obs["left"] = obsL;
+    obs["front"] = obsF;
+    obs["right"] = obsR;
+    
+    JsonObject clf = doc.createNestedObject("cliff_raw");
+    clf["left"] = clfL;
+    clf["front"] = clfF;
+    clf["right"] = clfR;
+    
+    // Debounced (processed) values
+    JsonObject obsD = doc.createNestedObject("obstacle_debounced");
+    obsD["left"] = sensors.isLeftBlocked();
+    obsD["front"] = sensors.isFrontBlocked();
+    obsD["right"] = sensors.isRightBlocked();
+    
+    JsonObject clfD = doc.createNestedObject("cliff_debounced");
+    clfD["left"] = sensors.isCliffLeft();
+    clfD["front"] = sensors.isCliffFront();
+    clfD["right"] = sensors.isCliffRight();
+    
+    // Robot state
+    doc["state"] = lastState;
+    doc["direction"] = lastDirection;
+    doc["power_mode"] = lastPowerMode;
+    doc["power_value"] = lastPowerValue;
+    
+    // Battery
+    JsonObject bat = doc.createNestedObject("battery");
+    bat["voltage"] = voltage;
+    bat["percent"] = percent;
+    
+    // Uptime
+    doc["uptime_ms"] = millis();
+    
+    String response;
+    serializeJson(doc, response);
+    server.send(200, "application/json", response);
+}
+
 void ApiClient::startWebServer() {
     // CORS preflight
     server.on("/command", HTTP_OPTIONS, [this]() { _handleCorsOptions(); });
     server.on("/status", HTTP_OPTIONS, [this]() { _handleCorsOptions(); });
+    server.on("/diagnostic", HTTP_OPTIONS, [this]() { _handleCorsOptions(); });
     
     // Actual endpoints
     server.on("/command", HTTP_POST, [this]() { _handleCommand(); });
     server.on("/status", HTTP_GET, [this]() { _handleStatus(); });
+    server.on("/diagnostic", HTTP_GET, [this]() { _handleDiagnostic(); });
     
     server.begin();
     Serial.println(">>> HTTP Server started on port " + String(ESP32_HTTP_PORT));
-    Serial.println(">>> Endpoints: POST /command, GET /status");
+    Serial.println(">>> Endpoints: POST /command, GET /status, GET /diagnostic");
 }
 
 void ApiClient::handleWebServer() {

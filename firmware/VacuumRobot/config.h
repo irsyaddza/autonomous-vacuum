@@ -16,15 +16,15 @@
 // ===== MOTOR DRIVER 2 (L298N #2) - DRIVE WHEELS =====
 // Motor Roda - dikontrol dari website (maju, mundur, belok kiri, belok kanan)
 // Motor Roda Kiri terhubung ke OUT1 & OUT2
-#define PIN_WHEEL_LEFT_FWD   12  // IO12 → IN1 (Left Wheel Forward)
-#define PIN_WHEEL_LEFT_REV   13  // IO13 → IN2 (Left Wheel Reverse)
+#define PIN_WHEEL_LEFT_FWD   13  // IO13 → IN2 (Left Wheel Forward) [swapped]
+#define PIN_WHEEL_LEFT_REV   12  // IO12 → IN1 (Left Wheel Reverse) [swapped]
 // Motor Roda Kanan terhubung ke OUT3 & OUT4
 #define PIN_WHEEL_RIGHT_FWD  14  // IO14 → IN3 (Right Wheel Forward)
 #define PIN_WHEEL_RIGHT_REV  15  // IO15 → IN4 (Right Wheel Reverse)
 
 // Sensors (IR Obstacle Avoidance) - Digital Input
-#define PIN_IR_LEFT         16  // IO16 → IR1 Kiri
-#define PIN_IR_FRONT        17  // IO17 → IR2 Tengah
+#define PIN_IR_LEFT         33  // IO33 → IR1 Kiri
+#define PIN_IR_FRONT        34  // IO34 → IR2 Tengah
 #define PIN_IR_RIGHT        18  // IO18 → IR3 Kanan
 
 // Sensors (IR Cliff Detection) - Digital Input
@@ -62,20 +62,25 @@
 
 // ===== CLEANING ALGORITHM SETTINGS =====
 // Obstacle avoidance timing
-#define BACKUP_DURATION         300     // ms - durasi mundur saat ada obstacle
-#define TURN_DURATION_MIN       300     // ms - durasi belok minimum
-#define TURN_DURATION_MAX       800     // ms - durasi belok maksimum
-#define TURN_DURATION_SMALL     200     // ms - belok kecil (45°) untuk obstacle samping
+#define BACKUP_DURATION         500     // ms - durasi mundur saat ada obstacle
+#define TURN_DURATION_MIN       500     // ms - durasi belok minimum (~90°)
+#define TURN_DURATION_MAX       1000    // ms - durasi belok maksimum (~180°)
+#define TURN_DURATION_SMALL     350     // ms - belok kecil (~60°) untuk obstacle samping
 
 // Cliff avoidance timing (prioritas lebih tinggi)
-#define CLIFF_BACKUP_DURATION   400     // ms - durasi mundur saat cliff (lebih lama)
-#define CLIFF_TURN_DURATION     600     // ms - durasi putar 180° saat cliff
+#define CLIFF_BACKUP_DURATION   600     // ms - durasi mundur saat cliff (lebih lama)
+#define CLIFF_TURN_DURATION     800     // ms - durasi putar 180° saat cliff
 
 // Spiral pattern settings
 #define SPIRAL_INITIAL_DURATION 500     // ms - durasi lurus awal spiral
 #define SPIRAL_INCREMENT        100     // ms - penambahan durasi setiap putaran spiral
 #define SPIRAL_MAX_DURATION     3000    // ms - durasi lurus maksimum sebelum pindah ke random bounce
-#define SPIRAL_TURN_DURATION    250     // ms - durasi belok 90° saat spiral
+#define SPIRAL_TURN_DURATION    300     // ms - durasi belok 90° saat spiral
+
+// Stuck detection
+#define STUCK_OBSTACLE_COUNT    3       // Jumlah obstacle berturut-turut sebelum escape
+#define STUCK_TIME_WINDOW       4000    // ms - jendela waktu untuk stuck detection
+#define ESCAPE_TURN_DURATION    1500    // ms - durasi putar escape (~360°)
 
 // Sensor debounce
 #define SENSOR_DEBOUNCE_COUNT   2       // Jumlah consecutive reads untuk konfirmasi sensor

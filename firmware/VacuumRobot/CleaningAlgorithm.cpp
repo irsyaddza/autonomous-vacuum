@@ -180,21 +180,26 @@ void CleaningAlgorithm::_handleBackupObstacle() {
         wheels.moveBackward();
     } else {
         // Mundur selesai → mulai belok
-        TurnDirection dir = _decideTurnDirection();
-        
-        // Pilih durasi belok berdasarkan kondisi obstacle:
-        // - Side-only (tanpa front) → belok kecil saja
-        // - Front / multi-side → random turn normal
+        // Simpan snapshot sensor SEKARANG karena setelah belok sensor bisa berubah
         bool front = sensors.isFrontBlocked();
         bool left  = sensors.isLeftBlocked();
         bool right = sensors.isRightBlocked();
         
+        TurnDirection dir = _decideTurnDirection();
+        
+        // Pilih durasi belok berdasarkan kondisi obstacle:
         unsigned long duration;
-        if (!front && (left != right)) {
-            // Hanya satu sisi terblokir, depan clear → belok kecil cukup
+        if (front && left && right) {
+            // Semua sisi terblokir (pojok) → putar besar
+            duration = TURN_DURATION_MAX;
+        } else if (front) {
+            // Depan terblokir → belok sedang-besar
+            duration = random(TURN_DURATION_MIN, TURN_DURATION_MAX + 1);
+        } else if (left != right) {
+            // Hanya satu sisi terblokir, depan clear → belok kecil
             duration = TURN_DURATION_SMALL;
         } else {
-            duration = _randomTurnDuration();
+            duration = random(TURN_DURATION_MIN, TURN_DURATION_MAX + 1);
         }
         
         _startTurn(dir, duration);
@@ -237,12 +242,9 @@ void CleaningAlgorithm::_handleBackupCliff() {
 void CleaningAlgorithm::_handleTurning() {
     unsigned long elapsed = millis() - _stateStartTime;
     
-    // Cek obstacle saat belok - hindari berputar menuju obstacle lain
-    if (sensors.isAnyObstacle()) {
-        Serial.println("[CLEAN] Obstacle during turn → backup again");
-        _startBackupObstacle();
-        return;
-    }
+    // PENTING: Jangan cek obstacle saat belok!
+    // Robot harus menyelesaikan putarannya dulu agar bisa bebas dari halangan.
+    // Jika kita interrupt di tengah belok, robot akan terjebak loop mundur-belok.
     
     if (elapsed < _turnDuration) {
         if (_turnDir == TURN_LEFT) {
@@ -251,10 +253,17 @@ void CleaningAlgorithm::_handleTurning() {
             wheels.turnRight();
         }
     } else {
-        // Belok selesai → jalan lurus lagi
-        _setState(CLEAN_FORWARD);
-        wheels.moveForward();
-        Serial.println("[CLEAN] Turn complete → Moving forward");
+        // Belok selesai → cek apakah masih ada obstacle di depan
+        if (sensors.isFrontBlocked()) {
+            // Masih ada halangan di depan setelah belok → mundur dan belok lagi
+            Serial.println("[CLEAN] Turn complete but front still blocked → backup again");
+            _startBackupObstacle();
+        } else {
+            // Depan clear → jalan lurus lagi
+            _setState(CLEAN_FORWARD);
+            wheels.moveForward();
+            Serial.println("[CLEAN] Turn complete → Moving forward");
+        }
     }
 }
 
@@ -303,19 +312,23 @@ void CleaningAlgorithm::_startBackupObstacle() {
     wheels.stop();
     
     // Stuck detection: jika terlalu sering obstacle dalam waktu singkat
-    if (millis() - _lastObstacleTime < 3000) {
+    if (millis() - _lastObstacleTime < STUCK_TIME_WINDOW) {
         _obstacleCount++;
     } else {
         _obstacleCount = 1;
     }
     _lastObstacleTime = millis();
     
-    if (_obstacleCount >= 5) {
+    if (_obstacleCount >= STUCK_OBSTACLE_COUNT) {
         // Robot terjebak! Putar besar untuk escape
-        Serial.println("[CLEAN] !!! STUCK DETECTED (5 obstacles in 3s) → Escape turn");
+        Serial.print("[CLEAN] !!! STUCK DETECTED (");
+        Serial.print(STUCK_OBSTACLE_COUNT);
+        Serial.print(" obstacles in ");
+        Serial.print(STUCK_TIME_WINDOW / 1000);
+        Serial.println("s) → Escape turn");
         _obstacleCount = 0;
         TurnDirection escapeDir = (random(2) == 0) ? TURN_LEFT : TURN_RIGHT;
-        _startTurn(escapeDir, CLIFF_TURN_DURATION * 2);  // Putar ~360° untuk escape
+        _startTurn(escapeDir, ESCAPE_TURN_DURATION);
         return;
     }
     
@@ -344,24 +357,32 @@ TurnDirection CleaningAlgorithm::_decideTurnDirection() {
     bool left  = sensors.isLeftBlocked();
     bool right = sensors.isRightBlocked();
     
-    if (left && right) {
-        // Kedua sisi terblokir → lorong sempit, putar random
-        // Durasi belok akan lebih panjang (ditangani di _handleBackupObstacle)
-        return (random(2) == 0) ? TURN_LEFT : TURN_RIGHT;
-    } else if (left && !right) {
-        // Obstacle di kiri saja → belok kanan
-        return TURN_RIGHT;
-    } else if (right && !left) {
-        // Obstacle di kanan saja → belok kiri
-        return TURN_LEFT;
-    } else if (front && left) {
-        // Depan + kiri → belok kanan
-        return TURN_RIGHT;
-    } else if (front && right) {
-        // Depan + kanan → belok kiri
-        return TURN_LEFT;
-    } else {
-        // Front only → random
+    // PRIORITAS 1: Semua sisi terblokir (pojok/sudut mati) → random
+    if (front && left && right) {
         return (random(2) == 0) ? TURN_LEFT : TURN_RIGHT;
     }
+    
+    // PRIORITAS 2: Depan + satu sisi → belok ke sisi yang kosong
+    if (front && left) {
+        return TURN_RIGHT;  // Depan + kiri terblokir → belok kanan
+    }
+    if (front && right) {
+        return TURN_LEFT;   // Depan + kanan terblokir → belok kiri
+    }
+    
+    // PRIORITAS 3: Kedua sisi terblokir, tapi depan kosong → lorong sempit, random
+    if (left && right) {
+        return (random(2) == 0) ? TURN_LEFT : TURN_RIGHT;
+    }
+    
+    // PRIORITAS 4: Hanya satu sisi → belok menjauhi obstacle
+    if (left) {
+        return TURN_RIGHT;
+    }
+    if (right) {
+        return TURN_LEFT;
+    }
+    
+    // PRIORITAS 5: Hanya depan terblokir → random
+    return (random(2) == 0) ? TURN_LEFT : TURN_RIGHT;
 }
