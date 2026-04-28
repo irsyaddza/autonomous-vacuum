@@ -55,10 +55,29 @@ void setup() {
   Serial.println("==========================================\n");
 }
 
+unsigned long lastBatterySend = 0;
+
 void loop() {
   // Update all subsystems
   robot.update();
-  api.update(); // Handle WebServer + fallback polling + battery send
+  api.update(); // Handle WebServer + fallback polling
+  
+  // Send battery data periodically
+  if (millis() - lastBatterySend >= BATTERY_SEND_INTERVAL || lastBatterySend == 0) {
+    lastBatterySend = millis();
+    if (lastBatterySend == 0) lastBatterySend = 1; // Prevent re-triggering immediately
+    
+    float voltage = battery.getVoltage();
+    int percent = battery.getPercentage();
+    
+    Serial.print("[BATTERY] Voltage: ");
+    Serial.print(voltage);
+    Serial.print("V, Percentage: ");
+    Serial.print(percent);
+    Serial.println("%");
+    
+    api.sendBattery(percent, voltage);
+  }
   
   delay(10); // Small delay for stability
 }

@@ -9,6 +9,9 @@ Route::get('/', function () {
 Route::get('about', function () {
     return view('about');
 });
+Route::get('diagnostic', function () {
+    return view('diagnostic');
+});
 
 // ===== VACUUM API v1 Routes =====
 Route::prefix('v1')->name('api.')->group(function () {

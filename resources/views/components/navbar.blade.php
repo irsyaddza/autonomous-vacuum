@@ -12,7 +12,10 @@
                     <a class="nav-link active" aria-current="page" href="/"><i class="fas fa-tachometer-alt me-1"></i> Dashboard</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="about"><i class="fas fa-info-circle me-1"></i> About</a>
+                    <a class="nav-link {{ request()->is('diagnostic') ? 'active' : '' }}" href="/diagnostic"><i class="fas fa-stethoscope me-1"></i> Diagnostic</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {{ request()->is('about') ? 'active' : '' }}" href="about"><i class="fas fa-info-circle me-1"></i> About</a>
                 </li>
                 <li class="nav-item ms-lg-3 mt-3 mt-lg-0 d-none d-lg-block">
                     <div class="d-flex flex-column align-items-center align-items-lg-end justify-content-center text-center text-lg-end">
