@@ -82,12 +82,27 @@ int BatteryMonitor::getPercentage() {
     return constrain(pct, 0, 100);
 }
 
-// Estimasi sisa waktu berdasarkan persentase
+// Estimasi sisa waktu berdasarkan persentase dan power mode
 String BatteryMonitor::getEstimatedTime() {
+    // Default: gunakan NORMAL mode
+    return getEstimatedTime("normal");
+}
+
+String BatteryMonitor::getEstimatedTime(String mode) {
     int pct = getPercentage();
     
+    // Pilih runtime berdasarkan mode
+    int fullRuntime;
+    if (mode == "eco") {
+        fullRuntime = RUNTIME_ECO_MIN;
+    } else if (mode == "strong") {
+        fullRuntime = RUNTIME_STRONG_MIN;
+    } else {
+        fullRuntime = RUNTIME_NORMAL_MIN;  // default: normal
+    }
+    
     // Estimasi linear: runtime penuh × persentase / 100
-    int totalMinutes = (BATTERY_FULL_RUNTIME_MIN * pct) / 100;
+    int totalMinutes = (fullRuntime * pct) / 100;
     
     if (totalMinutes <= 0) {
         return "< 1m";
@@ -102,6 +117,20 @@ String BatteryMonitor::getEstimatedTime() {
             return String(mins) + "m";
         }
     }
+}
+
+// ===== BATTERY PROTECTION =====
+
+bool BatteryMonitor::isLowBattery() {
+    return getPercentage() <= BATTERY_WARNING_PCT;
+}
+
+bool BatteryMonitor::isCritical() {
+    return getPercentage() <= BATTERY_CRITICAL_PCT;
+}
+
+bool BatteryMonitor::canStart() {
+    return getPercentage() > BATTERY_BLOCK_START_PCT;
 }
 
 // R1 30kΩ, R2 10kΩ

@@ -211,6 +211,15 @@ void ApiClient::connectWiFi() {
         Serial.print("IP Address: ");
         Serial.println(WiFi.localIP());
         
+        // WiFi connected melody — 2 cheerful beeps
+        tone(PIN_BUZZER, 1047);  // C6
+        delay(100);
+        noTone(PIN_BUZZER);
+        delay(50);
+        tone(PIN_BUZZER, 1319);  // E6
+        delay(150);
+        noTone(PIN_BUZZER);
+        
         // Save possibly updated API URL
         apiBaseUrl = String(custom_api_url.getValue());
         preferences.putString("api_url", apiBaseUrl);
@@ -260,6 +269,24 @@ void ApiClient::_handleCommand() {
     
     // Map commands to states
     if (command == "start") {
+        // Block start if battery too low
+        if (!battery.canStart()) {
+            int pct = battery.getPercentage();
+            Serial.print("[API] START BLOCKED - Battery too low: ");
+            Serial.print(pct);
+            Serial.println("%");
+            
+            DynamicJsonDocument errDoc(256);
+            errDoc["success"] = false;
+            errDoc["message"] = "Battery too low to start (" + String(pct) + "%). Need > " + String(BATTERY_BLOCK_START_PCT) + "%";
+            errDoc["battery_percent"] = pct;
+            errDoc["blocked"] = true;
+            
+            String errResponse;
+            serializeJson(errDoc, errResponse);
+            server.send(400, "application/json", errResponse);
+            return;
+        }
         lastState = "working";
         lastDirection = "autonomous";
     } else if (command == "stop") {
@@ -564,13 +591,77 @@ void ApiClient::sendBattery(int percent, float voltage) {
     DynamicJsonDocument doc(200);
     doc["battery_percent"] = percent;
     doc["battery_voltage"] = voltage;
-    doc["estimated_time"] = battery.getEstimatedTime();
+    doc["estimated_time"] = battery.getEstimatedTime(lastPowerMode);
     
     String json;
     serializeJson(doc, json);
     
     int httpCode = http.POST(json);
     http.end();
+}
+
+// ===== BATTERY EVENTS =====
+
+void ApiClient::sendBatteryEvent(String event, int percent, float voltage) {
+    if (WiFi.status() != WL_CONNECTED) return;
+    
+    HTTPClient http;
+    String url = apiBaseUrl + "/battery-event";
+    
+    http.begin(url);
+    http.addHeader("Content-Type", "application/json");
+    
+    DynamicJsonDocument doc(256);
+    doc["event"] = event;
+    doc["battery_percent"] = percent;
+    doc["battery_voltage"] = voltage;
+    doc["power_mode"] = lastPowerMode;
+    
+    String json;
+    serializeJson(doc, json);
+    
+    Serial.print("[API] Sending battery event: ");
+    Serial.println(event);
+    
+    int httpCode = http.POST(json);
+    http.end();
+    
+    if (httpCode == 201) {
+        Serial.println("[API] Battery event logged successfully");
+    } else {
+        Serial.print("[API] Battery event failed: HTTP ");
+        Serial.println(httpCode);
+    }
+}
+
+void ApiClient::sendAutoStop(int percent, float voltage) {
+    // 1. Send battery event
+    sendBatteryEvent("auto_stop_low_battery", percent, voltage);
+    
+    // 2. Update state on server to 'stopping' so dashboard reflects auto-stop
+    if (WiFi.status() != WL_CONNECTED) return;
+    
+    HTTPClient http;
+    String url = apiBaseUrl + "/command-log";
+    
+    http.begin(url);
+    http.addHeader("Content-Type", "application/json");
+    
+    DynamicJsonDocument doc(256);
+    doc["command"] = "auto_stop_low_battery";
+    doc["source"] = "esp32";
+    doc["status"] = "success";
+    doc["response_time_ms"] = 0;
+    doc["esp32_ip"] = WiFi.localIP().toString();
+    
+    String json;
+    serializeJson(doc, json);
+    
+    int httpCode = http.POST(json);
+    http.end();
+    
+    // Also update local state
+    lastState = "stopping";
 }
 
 

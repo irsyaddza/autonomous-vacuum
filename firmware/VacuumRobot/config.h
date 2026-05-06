@@ -10,8 +10,8 @@
 
 // Motor Vakum terhubung ke OUT3 & OUT4
 // PWM value diambil dari website (eco: 150, normal: 200, strong: 255)
-#define PIN_VACUUM_PWM_1    26  // IO26 → IN3 (Vacuum Motor Speed)
-#define PIN_VACUUM_PWM_2    32  // IO32 → IN4 (Vacuum Motor Direction)
+#define PIN_VACUUM_PWM_1    26  // IO26 → IN3
+#define PIN_VACUUM_PWM_2    32  // IO32 → IN4
 
 // ===== MOTOR DRIVER 2 (L298N #2) - DRIVE WHEELS =====
 // Motor Roda - dikontrol dari website (maju, mundur, belok kiri, belok kanan)
@@ -39,7 +39,7 @@
 #define PIN_WIFI_RESET      4   // Tombol tambahan untuk ESP32. Tekan tahan 5 detik.
 
 // Buzzer (Active Buzzer)
-#define PIN_BUZZER          27  // IO27 → Buzzer untuk feedback WiFi reset
+#define PIN_BUZZER          27  // IO27 → Buzzer
 
 // ===== WIFI AP CONFIG =====
 // Nama dan password WiFi Access Point saat mode setup

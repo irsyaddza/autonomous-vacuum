@@ -168,7 +168,7 @@
         };
 
         // ===== UI HELPERS =====
-        function showNotification(type, message) {
+        function showNotification(type, message, persistent = false) {
             const icon = type === 'success' ? 'fa-check-circle' : type === 'warning' ? 'fa-exclamation-triangle' : 'fa-exclamation-circle';
             const colorClass = type === 'success' ? 'text-success' : type === 'warning' ? 'text-warning' : 'text-danger';
             const borderClass = type === 'success' ? 'border-success' : type === 'warning' ? 'border-warning' : 'border-danger';
@@ -186,13 +186,15 @@
             const container = document.getElementById('notification-container');
             container.innerHTML = html;
             
-            setTimeout(() => {
-                const alerts = container.querySelectorAll('.alert');
-                alerts.forEach(el => {
-                    const alert = new bootstrap.Alert(el);
-                    alert.close();
-                });
-            }, 3000);
+            if (!persistent) {
+                setTimeout(() => {
+                    const alerts = container.querySelectorAll('.alert');
+                    alerts.forEach(el => {
+                        const alert = new bootstrap.Alert(el);
+                        alert.close();
+                    });
+                }, 3000);
+            }
         }
 
         // ===== ESP32 IP DISCOVERY =====
@@ -267,6 +269,14 @@
 
             try {
                 const res = await sendToEsp32('command', { command: command });
+                
+                // Check if command was blocked (e.g., low battery)
+                if (res.blocked) {
+                    showNotification('warning', `🔋 ${res.message}`, true);
+                    logCommandToServer(command, 'failed', res.responseTime, esp32Ip);
+                    return;
+                }
+                
                 showNotification('success', `⚡ ${command.toUpperCase()} (${res.responseTime}ms)`);
                 logCommandToServer(command, 'success', res.responseTime, esp32Ip);
                 
@@ -274,6 +284,12 @@
                     updateStatusUI({ state: res.state, power_mode: res.power_mode });
                 }
             } catch (err) {
+                // Check if error response contains blocked info
+                if (err.responseJSON && err.responseJSON.blocked) {
+                    showNotification('warning', `🔋 ${err.responseJSON.message}`, true);
+                    logCommandToServer(command, 'failed', err.responseTime || 0, esp32Ip);
+                    return;
+                }
                 showNotification('error', '❌ ESP32 unreachable. Try again.');
                 logCommandToServer(command, 'failed', err.responseTime || 0, esp32Ip);
             }
@@ -364,6 +380,11 @@
                     break;
             }
             
+            // Check if stopped due to low battery (from latest event)
+            if (data.state === 'stopping' && lastBatteryEvent === 'auto_stop_low_battery') {
+                infoText = '🔋 Auto-stopped: Battery depleted';
+            }
+            
             statusEl.innerHTML = `<span class="badge ${badgeClass}">${statusText}</span>`;
             infoEl.textContent = infoText;
             
@@ -419,8 +440,43 @@
             document.getElementById('powerInfo').innerHTML = `Current: <span class="text-white fw-bold uppercase">${mode.toUpperCase()}</span>`;
         }
 
+        // ===== BATTERY EVENT POLLING =====
+        let lastBatteryEvent = null;
+        let lastBatteryEventId = null;
+
+        function fetchBatteryEvents() {
+            $.get(`${API_BASE_URL}/battery-events/latest`, (res) => {
+                if (res.success && res.data) {
+                    const event = res.data;
+                    const eventKey = event.event + '_' + event.created_at;
+                    
+                    // Only show notification once per unique event
+                    if (eventKey !== lastBatteryEventId) {
+                        lastBatteryEventId = eventKey;
+                        lastBatteryEvent = event.event;
+                        
+                        if (event.event === 'auto_stop_low_battery') {
+                            showNotification('error', 
+                                `🔋 Robot auto-stopped! Battery depleted (${event.battery_percent}%, ${parseFloat(event.battery_voltage).toFixed(1)}V). Please charge the battery.`, 
+                                true
+                            );
+                            // Force refresh status
+                            fetchVacuumStatus();
+                        } else if (event.event === 'low_battery_warning') {
+                            showNotification('warning', 
+                                `⚠️ Low battery warning! ${event.battery_percent}% remaining (${parseFloat(event.battery_voltage).toFixed(1)}V). Robot will auto-stop at 0%.`, 
+                                true
+                            );
+                        }
+                    }
+                } else {
+                    lastBatteryEvent = null;
+                }
+            });
+        }
+
         // ===== INITIALIZATION =====
-        let statusInterval, batteryInterval;
+        let statusInterval, batteryInterval, batteryEventInterval;
 
         document.addEventListener('DOMContentLoaded', async () => {
             // 1. Discover ESP32 IP
@@ -433,13 +489,18 @@
             statusInterval = setInterval(fetchVacuumStatus, 20000);
             batteryInterval = setInterval(fetchBatteryData, 10000);
             
-            // 4. Re-discover ESP32 IP every 30 seconds
+            // 4. Poll for battery events (warnings & auto-stop)
+            fetchBatteryEvents();
+            batteryEventInterval = setInterval(fetchBatteryEvents, 10000);
+            
+            // 5. Re-discover ESP32 IP every 30 seconds
             setInterval(discoverEsp32, 30000);
         });
 
         window.addEventListener('beforeunload', () => {
             clearInterval(statusInterval);
             clearInterval(batteryInterval);
+            clearInterval(batteryEventInterval);
         });
     </script>
 </x-master>

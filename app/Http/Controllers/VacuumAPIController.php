@@ -366,6 +366,7 @@ class VacuumAPIController extends Controller
                 'start' => 'working',
                 'stop' => 'stopping',
                 'return_home' => 'returning',
+                'auto_stop_low_battery' => 'stopping',
             ];
             $powerMap = [
                 'eco' => ['mode' => 'eco', 'value' => 150],
@@ -404,6 +405,100 @@ class VacuumAPIController extends Controller
                 'message' => 'Validation failed',
                 'errors' => $e->errors()
             ], 422);
+        }
+    }
+
+    /**
+     * POST /v1/vacuum/battery-event
+     * ESP32 sends battery events (low_battery_warning, auto_stop_low_battery)
+     */
+    public function batteryEvent(Request $request)
+    {
+        try {
+            $validated = $request->validate([
+                'event' => 'required|in:low_battery_warning,auto_stop_low_battery',
+                'battery_percent' => 'required|integer|between:0,100',
+                'battery_voltage' => 'nullable|numeric',
+                'power_mode' => 'nullable|string',
+            ]);
+
+            // Log as command for history
+            $log = CommandLog::create([
+                'command' => $validated['event'],
+                'source' => 'esp32',
+                'status' => 'success',
+                'response_time_ms' => 0,
+                'payload' => [
+                    'battery_percent' => $validated['battery_percent'],
+                    'battery_voltage' => $validated['battery_voltage'],
+                    'power_mode' => $validated['power_mode'] ?? null,
+                ],
+            ]);
+
+            // If auto-stop, update vacuum state to stopping
+            if ($validated['event'] === 'auto_stop_low_battery') {
+                $vacuumStatus = VacuumStatus::first();
+                if ($vacuumStatus) {
+                    $vacuumStatus->state = 'stopping';
+                    $vacuumStatus->save();
+                }
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Battery event logged: ' . $validated['event'],
+                'data' => [
+                    'id' => $log->id,
+                    'event' => $validated['event'],
+                    'battery_percent' => $validated['battery_percent'],
+                    'logged_at' => $log->created_at,
+                ]
+            ], 201);
+
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed',
+                'errors' => $e->errors()
+            ], 422);
+        }
+    }
+
+    /**
+     * GET /v1/vacuum/battery-events/latest
+     * Get the latest battery event (for dashboard notification)
+     */
+    public function getLatestBatteryEvent()
+    {
+        try {
+            $event = CommandLog::whereIn('command', ['low_battery_warning', 'auto_stop_low_battery'])
+                ->where('created_at', '>=', now()->subMinutes(5))
+                ->orderBy('created_at', 'desc')
+                ->first();
+
+            if (!$event) {
+                return response()->json([
+                    'success' => true,
+                    'data' => null
+                ], 200);
+            }
+
+            return response()->json([
+                'success' => true,
+                'data' => [
+                    'event' => $event->command,
+                    'battery_percent' => $event->payload['battery_percent'] ?? null,
+                    'battery_voltage' => $event->payload['battery_voltage'] ?? null,
+                    'power_mode' => $event->payload['power_mode'] ?? null,
+                    'created_at' => $event->created_at,
+                ]
+            ], 200);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error: ' . $e->getMessage()
+            ], 500);
         }
     }
 }

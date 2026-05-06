@@ -32,5 +32,9 @@ Route::prefix('v1')->name('api.')->group(function () {
         Route::post('register-device', [VacuumAPIController::class, 'registerDevice'])->name('vacuum.register-device');
         Route::get('device', [VacuumAPIController::class, 'getDevice'])->name('vacuum.device');
         Route::post('command-log', [VacuumAPIController::class, 'logCommand'])->name('vacuum.command-log');
+
+        // ===== Battery Protection Events =====
+        Route::post('battery-event', [VacuumAPIController::class, 'batteryEvent'])->name('vacuum.battery-event');
+        Route::get('battery-events/latest', [VacuumAPIController::class, 'getLatestBatteryEvent'])->name('vacuum.battery-events.latest');
     });
 });

@@ -21,6 +21,8 @@ public:
     
     // API interactions (outgoing to Laravel)
     void sendBattery(int percent, float voltage);
+    void sendBatteryEvent(String event, int percent, float voltage);
+    void sendAutoStop(int percent, float voltage);  // Notify server robot auto-stopped
     void logCommandToServer(String command, String status, int responseMs);
     
     // Utility
