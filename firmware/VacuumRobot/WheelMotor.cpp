@@ -32,22 +32,29 @@ void WheelMotor::begin() {
     Serial.print("  - Speed: ");
     Serial.println(_speed);
     
-    // === MOTOR TEST ON STARTUP ===
-    Serial.println("[WHEEL] >>> TESTING MOTORS - Forward 500ms <<<");
-    ledcWrite(PIN_WHEEL_LEFT_FWD, _speed);
-    ledcWrite(PIN_WHEEL_LEFT_REV, 0);
-    ledcWrite(PIN_WHEEL_RIGHT_FWD, _speed);
-    ledcWrite(PIN_WHEEL_RIGHT_REV, 0);
-    delay(500);  // Test forward
+    // === STARTUP BUZZER MELODY (Samsung Smart Lock style) ===
+    Serial.println("[WHEEL] >>> Playing startup melody <<<");
     
-    Serial.println("[WHEEL] >>> TESTING MOTORS - Backward 500ms <<<");
-    ledcWrite(PIN_WHEEL_LEFT_FWD, 0);
-    ledcWrite(PIN_WHEEL_LEFT_REV, _speed);
-    ledcWrite(PIN_WHEEL_RIGHT_FWD, 0);
-    ledcWrite(PIN_WHEEL_RIGHT_REV, _speed);
-    delay(500);  // Test backward
+    tone(PIN_BUZZER, 1319);  // E6
+    delay(80);
+    noTone(PIN_BUZZER);
+    delay(30);
     
-    Serial.println("[WHEEL] >>> TEST COMPLETE <<<");
+    tone(PIN_BUZZER, 1661);  // G#6
+    delay(80);
+    noTone(PIN_BUZZER);
+    delay(30);
+    
+    tone(PIN_BUZZER, 1976);  // B6
+    delay(80);
+    noTone(PIN_BUZZER);
+    delay(30);
+    
+    tone(PIN_BUZZER, 2637);  // E7 (final note - longer)
+    delay(200);
+    noTone(PIN_BUZZER);
+    
+    Serial.println("[WHEEL] >>> Startup melody complete <<<");
     stop();
 }
 
