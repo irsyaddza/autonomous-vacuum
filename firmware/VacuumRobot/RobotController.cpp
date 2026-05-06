@@ -35,6 +35,65 @@ void RobotController::update() {
     int targetPower = api.lastPowerValue;
     String direction = api.lastDirection;
     
+    // ===== BATTERY PROTECTION =====
+    // Only check when robot is actively working
+    if (targetState == "working") {
+        int pct = battery.getPercentage();
+        float volt = battery.getVoltage();
+        
+        // CRITICAL: Auto-stop at 0% battery
+        if (battery.isCritical() && !_autoStopped) {
+            _autoStopped = true;
+            
+            Serial.println("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+            Serial.println("[ROBOT] BATTERY CRITICAL (0%) - AUTO STOPPING!");
+            Serial.print("[ROBOT] Voltage: ");
+            Serial.print(volt);
+            Serial.print("V, Percent: ");
+            Serial.print(pct);
+            Serial.println("%");
+            Serial.println("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+            
+            // Stop everything
+            if (_wasAutonomous) {
+                _cleaner.stop();
+                _wasAutonomous = false;
+            }
+            stopAll();
+            
+            // Notify server
+            api.sendAutoStop(pct, volt);
+            
+            return;  // Skip all motor control
+        }
+        
+        // WARNING: Low battery at 15%
+        if (battery.isLowBattery() && !_lowBatteryWarned) {
+            _lowBatteryWarned = true;
+            
+            Serial.println("==========================================");
+            Serial.print("[ROBOT] LOW BATTERY WARNING! ");
+            Serial.print(pct);
+            Serial.print("% (");
+            Serial.print(volt);
+            Serial.println("V)");
+            Serial.println("==========================================");
+            
+            // Send warning event to server
+            api.sendBatteryEvent("low_battery_warning", pct, volt);
+        }
+    }
+    
+    // Reset battery flags when not working (charged/recovered)
+    if (targetState != "working") {
+        if (_autoStopped && battery.getPercentage() > BATTERY_BLOCK_START_PCT) {
+            _autoStopped = false;
+            _lowBatteryWarned = false;
+            Serial.println("[ROBOT] Battery recovered - protection flags reset");
+        }
+    }
+    // ===== END BATTERY PROTECTION =====
+    
     // Log state changes
     if (targetState != _prevState) {
         Serial.print("[ROBOT] State changed: '");

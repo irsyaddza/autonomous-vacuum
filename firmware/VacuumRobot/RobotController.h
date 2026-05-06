@@ -24,6 +24,10 @@ private:
     // Autonomous cleaning algorithm
     CleaningAlgorithm _cleaner;
     bool _wasAutonomous = false;
+    
+    // Battery protection state
+    bool _lowBatteryWarned = false;   // True once low battery warning sent
+    bool _autoStopped = false;        // True once auto-stopped for low battery
 };
 
 #endif
