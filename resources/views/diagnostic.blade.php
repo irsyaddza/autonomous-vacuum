@@ -225,11 +225,11 @@
                     </div>
                     <h6 class="text-primary mb-3 mt-4"><i class="fas fa-exclamation-triangle me-1"></i> Stuck Detection</h6>
                     <div class="mb-3">
-                        <label class="form-label small text-secondary">Jumlah Obstacle</label>
+                        <label class="form-label small text-secondary">Obstacle Count</label>
                         <input type="number" class="form-control form-control-sm bg-dark text-white border-secondary" id="t_stuckObstacleCount" min="2" max="10" step="1">
                     </div>
                     <div class="mb-3">
-                        <label class="form-label small text-secondary">Jendela Waktu (ms)</label>
+                        <label class="form-label small text-secondary">Time Stuck (ms)</label>
                         <input type="number" class="form-control form-control-sm bg-dark text-white border-secondary" id="t_stuckTimeWindow" min="1000" max="10000" step="500">
                     </div>
                     <div class="mb-3">
@@ -260,7 +260,7 @@
             </div>
             <div class="alert alert-dark bg-opacity-25 border-0 mt-3 mb-0 small">
                 <i class="fas fa-info-circle me-1 text-info"></i>
-                Perubahan langsung berlaku di ESP32 <strong>tanpa flash ulang</strong>. Nilai akan kembali ke default setelah ESP32 di-restart.
+                Perubahan langsung berlaku di ESP32 <strong>tanpa flash ulang</strong>.
                 Klik <strong>Reset Default</strong> untuk mengembalikan semua ke nilai di <code>config.h</code>.
             </div>
         </div>
