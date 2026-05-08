@@ -22,6 +22,10 @@ void RobotController::begin() {
 }
 
 void RobotController::update() {
+    // Update soft start ramping (non-blocking, must run every loop)
+    vacuum.updateSoftStart();
+    brush.updateSoftStart();
+    
     // 1. Battery Reporting
     if (millis() - _lastBatteryCheck > BATTERY_SEND_INTERVAL) {
         _lastBatteryCheck = millis();
