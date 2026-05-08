@@ -5,8 +5,8 @@
 
 // ===== MOTOR DRIVER 1 (L298N #1) - BRUSH & VACUUM =====
 // Motor Sapu (Brush) terhubung ke OUT1 & OUT2
-#define PIN_BRUSH_FWD       23  // IO23 → IN1 (Brush Motor Forward)
-#define PIN_BRUSH_REV       25  // IO25 → IN2 (Brush Motor Reverse)
+#define PIN_BRUSH_FWD       25  // IO23 → IN1 (Brush Motor Forward)
+#define PIN_BRUSH_REV       23  // IO25 → IN2 (Brush Motor Reverse)
 
 // Motor Vakum terhubung ke OUT3 & OUT4
 // PWM value diambil dari website (eco: 150, normal: 200, strong: 255)
@@ -84,5 +84,12 @@
 
 // Sensor debounce
 #define SENSOR_DEBOUNCE_COUNT   2       // Jumlah consecutive reads untuk konfirmasi sensor
+
+// ===== SOFT START SETTINGS =====
+// PWM dinaikkan bertahap saat motor mulai (mengurangi inrush current)
+#define SOFT_START_RAMP_STEP       5    // PWM increment per step (1-50)
+#define SOFT_START_RAMP_INTERVAL   10   // ms between steps (~500ms full ramp 0→255)
+// Catatan: Total waktu ramp ≈ (target_pwm / RAMP_STEP) * RAMP_INTERVAL
+// Contoh Normal mode: (200 / 5) * 10 = 400ms
 
 #endif

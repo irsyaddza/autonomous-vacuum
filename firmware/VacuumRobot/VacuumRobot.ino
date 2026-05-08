@@ -33,6 +33,9 @@ void setup() {
   // Initialize Network
   api.connectWiFi();
 
+  // Load timing settings from NVS
+  timing.load();
+
   // Start Direct HTTP Server (receives commands from browser)
   api.startWebServer();
 

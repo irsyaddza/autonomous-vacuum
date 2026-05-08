@@ -46,6 +46,9 @@ struct TimingSettings {
         stuckTimeWindow     = STUCK_TIME_WINDOW;
         escapeTurnDuration  = ESCAPE_TURN_DURATION;
     }
+
+    void load();
+    void save();
 };
 
 // Global instance — accessible from all files

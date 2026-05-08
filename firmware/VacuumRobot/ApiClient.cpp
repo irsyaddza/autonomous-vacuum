@@ -458,7 +458,9 @@ void ApiClient::_handleSettings() {
         timing.resetDefaults();
     }
     
-    Serial.println("[API] Timing settings updated from web");
+    timing.save();
+    
+    Serial.println("[API] Timing settings updated from web and saved to NVS");
     server.send(200, "application/json", "{\"success\":true,\"message\":\"Settings updated\"}");
 }
 
