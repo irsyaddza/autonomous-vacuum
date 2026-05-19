@@ -28,7 +28,9 @@
 
 class BatteryMonitor {
 public:
+
     void begin();
+<<<<<<< Updated upstream
     float getVoltage();         // Returns stable voltage (anti-sag)
     float getRawVoltage();      // Returns current actual voltage (for diagnostics)
     int getPercentage();
@@ -52,6 +54,17 @@ private:
     
     // Internal helpers
     float _readFilteredVoltage();  // Read ADC with multi-sample averaging
+=======
+
+    float getVoltage();
+
+    int getPercentage();
+
+private:
+
+    // Kalibrasi voltage divider
+    float _calibrationFactor = 2.0;
+>>>>>>> Stashed changes
 };
 
 #endif
