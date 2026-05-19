@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Models\CommandLog;
-use App\Models\Dayahisap;
 use App\Models\Esp32Device;
 use App\Models\VacuumStatus;
 use App\Models\BatteryLog;
@@ -88,48 +87,6 @@ class VacuumAPIController extends Controller
         }
     }
 
-    /**
-     * POST /api/vacuum/power-mode
-     * Update daya hisap (dari web app)
-     * Modes: eco (150), normal (200), strong (255)
-     */
-    public function setPowerMode(Request $request)
-    {
-        try {
-            $validated = $request->validate([
-                'mode' => 'required|in:eco,normal,strong',
-                'value' => 'required|integer|between:150,255'
-            ]);
-
-            $vacuumStatus = VacuumStatus::first() ?? new VacuumStatus();
-            $vacuumStatus->power_mode = $validated['mode'];
-            $vacuumStatus->power_value = $validated['value'];
-            $vacuumStatus->save();
-
-            // Simpan ke history daya hisap
-            Dayahisap::create([
-                'value' => $validated['value'],
-                'mode' => $validated['mode']
-            ]);
-
-            return response()->json([
-                'success' => true,
-                'message' => 'Power mode updated',
-                'data' => [
-                    'mode' => $vacuumStatus->power_mode,
-                    'value' => $vacuumStatus->power_value,
-                    'updated_at' => $vacuumStatus->updated_at
-                ]
-            ], 200);
-
-        } catch (\Illuminate\Validation\ValidationException $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Validasi gagal',
-                'errors' => $e->errors()
-            ], 422);
-        }
-    }
 
     /**
      * POST /api/vacuum/battery
@@ -492,6 +449,32 @@ class VacuumAPIController extends Controller
                     'power_mode' => $event->payload['power_mode'] ?? null,
                     'created_at' => $event->created_at,
                 ]
+            ], 200);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * GET /v1/vacuum/command-logs
+     * Fetch recent command logs for dashboard display
+     */
+    public function getCommandLogs(Request $request)
+    {
+        try {
+            $limit = min($request->input('limit', 20), 100);
+
+            $logs = CommandLog::orderBy('created_at', 'desc')
+                ->limit($limit)
+                ->get(['id', 'command', 'source', 'status', 'response_time_ms', 'esp32_ip', 'created_at']);
+
+            return response()->json([
+                'success' => true,
+                'data' => $logs
             ], 200);
 
         } catch (\Exception $e) {
