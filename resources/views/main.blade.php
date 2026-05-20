@@ -360,7 +360,7 @@
                     },
                     error: (xhr, status, error) => {
                         const elapsed = Date.now() - startTime;
-                        reject({ status, error, responseTime: elapsed });
+                        reject({ status, error, responseTime: elapsed, responseJSON: xhr.responseJSON });
                     }
                 });
             });
@@ -457,13 +457,6 @@
             });
         }
 
-        function fetchVacuumStatus() {
-            $.get(`${API_BASE_URL}/status`, (res) => {
-                if(res.success && res.data) {
-                    updateStatusUI(res.data);
-                }
-            });
-        }
 
         function fetchBatteryData() {
             $.get(`${API_BASE_URL}/battery/latest`, (res) => {
@@ -586,7 +579,7 @@
                                 true
                             );
                             // Force refresh status
-                            fetchVacuumStatus();
+                            fetchFullStatus();
                         } else if (event.event === 'low_battery_warning') {
                             showNotification('warning', 
                                 `⚠️ Low battery warning! ${event.battery_percent}% remaining (${parseFloat(event.battery_voltage).toFixed(1)}V). Robot will auto-stop at 0%.`, 
@@ -723,7 +716,7 @@
             fetchFullStatus();
             
             // 3. Keep polling for dashboard sync (status from Laravel DB)
-            statusInterval = setInterval(fetchVacuumStatus, 20000);
+            statusInterval = setInterval(fetchFullStatus, 20000);
             batteryInterval = setInterval(fetchBatteryData, 10000);
             
             // 4. Poll for battery events (warnings & auto-stop)
