@@ -21,6 +21,8 @@ public:
     
     // API interactions (outgoing to Laravel)
     void sendBattery(int percent, float voltage);
+    void sendBatteryEvent(String event, int percent, float voltage);
+    void sendAutoStop(int percent, float voltage);  // Notify server robot auto-stopped
     void logCommandToServer(String command, String status, int responseMs);
     
     // Utility
@@ -32,11 +34,13 @@ public:
     String lastState = "standby";
     String lastPowerMode = "normal";
     int lastPowerValue = 200;
-    String lastDirection = "forward";
+    String lastDirection = "";
 
 private:
     void _handleCommand();       // Handler for POST /command
     void _handleStatus();        // Handler for GET /status
+    void _handleDiagnostic();    // Handler for GET /diagnostic
+    void _handleSettings();      // Handler for POST /settings
     void _handleCorsOptions();   // Handler for OPTIONS (CORS preflight)
     void _addCorsHeaders();      // Add CORS headers to response
     

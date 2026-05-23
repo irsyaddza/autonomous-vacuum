@@ -5,20 +5,32 @@
 
 class RobotController {
 public:
+
     void begin();
-    void update(); // Main logic loop
+    void update();
 
 private:
-    void stopAll();
+
+    // Main Mode
     void handleCleaning();
     void handleReturning();
+
+    // Safety
     void checkSafety();
-    
+
+    // Utility
+    void stopAll();
+
+    // Anti-loop
+    unsigned long _loopStartTime = 0;
+    bool _escapeMode = false;
+
+    // Battery
     unsigned long _lastBatteryCheck = 0;
-    
-    // For change detection and logging
+
+    // Debug
     String _prevState = "";
-    int _prevPowerValue = 0;
+    int _prevPowerValue = -1;
 };
 
 #endif

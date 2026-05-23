@@ -11,19 +11,20 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('dayahisap', function (Blueprint $table) {
-            $table->id();
-            $table->integer('value'); // 150, 200, 255
-            $table->enum('mode', ['eco', 'normal', 'strong'])->nullable();
-            $table->timestamps();
-            
-            // Index untuk query cepat
-            $table->index('created_at');
-        });
+        Schema::dropIfExists('dayahisap');
     }
 
+    /**
+     * Reverse the migrations.
+     */
     public function down(): void
     {
-        Schema::dropIfExists('dayahisap');
+        Schema::create('dayahisap', function (Blueprint $table) {
+            $table->id();
+            $table->integer('value');
+            $table->enum('mode', ['eco', 'normal', 'strong'])->nullable();
+            $table->timestamps();
+            $table->index('created_at');
+        });
     }
 };

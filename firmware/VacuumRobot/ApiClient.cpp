@@ -1,6 +1,12 @@
 #include "ApiClient.h"
 #include "config.h"
 #include <ArduinoJson.h>
+#include "SensorArray.h"
+#include "BatteryMonitor.h"
+#include "TimingSettings.h"
+
+extern SensorArray sensors;
+extern BatteryMonitor battery;
 #include <WiFiManager.h>
 
 // Global WebServer instance
@@ -10,6 +16,7 @@ WebServer server(ESP32_HTTP_PORT);
 
 void ApiClient::connectWiFi() {
     initBuzzer();
+    pinMode(PIN_WIFI_RESET, INPUT_PULLUP);
     
     // Load API URL from NVS Preferences
     preferences.begin("vacuum-app", false);
@@ -204,6 +211,15 @@ void ApiClient::connectWiFi() {
         Serial.print("IP Address: ");
         Serial.println(WiFi.localIP());
         
+        // WiFi connected melody — 2 cheerful beeps
+        tone(PIN_BUZZER, 1047);  // C6
+        delay(100);
+        noTone(PIN_BUZZER);
+        delay(50);
+        tone(PIN_BUZZER, 1319);  // E6
+        delay(150);
+        noTone(PIN_BUZZER);
+        
         // Save possibly updated API URL
         apiBaseUrl = String(custom_api_url.getValue());
         preferences.putString("api_url", apiBaseUrl);
@@ -253,9 +269,29 @@ void ApiClient::_handleCommand() {
     
     // Map commands to states
     if (command == "start") {
+        // Block start if battery too low
+        if (!battery.canStart()) {
+            int pct = battery.getPercentage();
+            Serial.print("[API] START BLOCKED - Battery too low: ");
+            Serial.print(pct);
+            Serial.println("%");
+            
+            DynamicJsonDocument errDoc(256);
+            errDoc["success"] = false;
+            errDoc["message"] = "Battery too low to start (" + String(pct) + "%). Need > " + String(BATTERY_BLOCK_START_PCT) + "%";
+            errDoc["battery_percent"] = pct;
+            errDoc["blocked"] = true;
+            
+            String errResponse;
+            serializeJson(errDoc, errResponse);
+            server.send(400, "application/json", errResponse);
+            return;
+        }
         lastState = "working";
+        lastDirection = "autonomous";
     } else if (command == "stop") {
         lastState = "stopping";
+        lastDirection = "forward";
     } else if (command == "return_home") {
         lastState = "returning";
     } else if (command == "eco") {
@@ -315,18 +351,135 @@ void ApiClient::_handleStatus() {
     server.send(200, "application/json", response);
 }
 
+void ApiClient::_handleDiagnostic() {
+    _addCorsHeaders();
+    
+    // Read raw digital values from all 6 sensors
+    int obsL = digitalRead(PIN_IR_LEFT);
+    int obsF = digitalRead(PIN_IR_FRONT);
+    int obsR = digitalRead(PIN_IR_RIGHT);
+    int clfL = digitalRead(PIN_CLIFF_LEFT);
+    int clfF = digitalRead(PIN_CLIFF_FRONT);
+    int clfR = digitalRead(PIN_CLIFF_RIGHT);
+    
+    // Read battery
+    float voltage = battery.getVoltage();
+    int percent = battery.getPercentage();
+    
+    DynamicJsonDocument doc(1024);
+    doc["success"] = true;
+    
+    // Raw digital values (0 or 1)
+    JsonObject obs = doc.createNestedObject("obstacle_raw");
+    obs["left"] = obsL;
+    obs["front"] = obsF;
+    obs["right"] = obsR;
+    
+    JsonObject clf = doc.createNestedObject("cliff_raw");
+    clf["left"] = clfL;
+    clf["front"] = clfF;
+    clf["right"] = clfR;
+    
+    // Debounced (processed) values
+    JsonObject obsD = doc.createNestedObject("obstacle_debounced");
+    obsD["left"] = sensors.isLeftBlocked();
+    obsD["front"] = sensors.isFrontBlocked();
+    obsD["right"] = sensors.isRightBlocked();
+    
+    JsonObject clfD = doc.createNestedObject("cliff_debounced");
+    clfD["left"] = sensors.isCliffLeft();
+    clfD["front"] = sensors.isCliffFront();
+    clfD["right"] = sensors.isCliffRight();
+    
+    // Robot state
+    doc["state"] = lastState;
+    doc["direction"] = lastDirection;
+    doc["power_mode"] = lastPowerMode;
+    doc["power_value"] = lastPowerValue;
+    
+    // Battery
+    JsonObject bat = doc.createNestedObject("battery");
+    bat["voltage"] = voltage;
+    bat["percent"] = percent;
+    
+    // Uptime
+    doc["uptime_ms"] = millis();
+    
+    // Current timing settings
+    JsonObject ts = doc.createNestedObject("timing");
+    ts["backupDuration"] = timing.backupDuration;
+    ts["turnDurationMin"] = timing.turnDurationMin;
+    ts["turnDurationMax"] = timing.turnDurationMax;
+    ts["turnDurationSmall"] = timing.turnDurationSmall;
+    ts["cliffBackupDuration"] = timing.cliffBackupDuration;
+    ts["cliffTurnDuration"] = timing.cliffTurnDuration;
+    ts["spiralInitialDuration"] = timing.spiralInitialDuration;
+    ts["spiralIncrement"] = timing.spiralIncrement;
+    ts["spiralMaxDuration"] = timing.spiralMaxDuration;
+    ts["spiralTurnDuration"] = timing.spiralTurnDuration;
+    ts["stuckObstacleCount"] = timing.stuckObstacleCount;
+    ts["stuckTimeWindow"] = timing.stuckTimeWindow;
+    ts["escapeTurnDuration"] = timing.escapeTurnDuration;
+    
+    String response;
+    serializeJson(doc, response);
+    server.send(200, "application/json", response);
+}
+
+void ApiClient::_handleSettings() {
+    _addCorsHeaders();
+    
+    String body = server.arg("plain");
+    DynamicJsonDocument doc(512);
+    DeserializationError err = deserializeJson(doc, body);
+    
+    if (err) {
+        server.send(400, "application/json", "{\"success\":false,\"error\":\"Invalid JSON\"}");
+        return;
+    }
+    
+    // Update hanya field yang dikirim (partial update)
+    if (doc.containsKey("backupDuration"))      timing.backupDuration = doc["backupDuration"];
+    if (doc.containsKey("turnDurationMin"))      timing.turnDurationMin = doc["turnDurationMin"];
+    if (doc.containsKey("turnDurationMax"))      timing.turnDurationMax = doc["turnDurationMax"];
+    if (doc.containsKey("turnDurationSmall"))    timing.turnDurationSmall = doc["turnDurationSmall"];
+    if (doc.containsKey("cliffBackupDuration"))  timing.cliffBackupDuration = doc["cliffBackupDuration"];
+    if (doc.containsKey("cliffTurnDuration"))    timing.cliffTurnDuration = doc["cliffTurnDuration"];
+    if (doc.containsKey("spiralInitialDuration")) timing.spiralInitialDuration = doc["spiralInitialDuration"];
+    if (doc.containsKey("spiralIncrement"))      timing.spiralIncrement = doc["spiralIncrement"];
+    if (doc.containsKey("spiralMaxDuration"))    timing.spiralMaxDuration = doc["spiralMaxDuration"];
+    if (doc.containsKey("spiralTurnDuration"))   timing.spiralTurnDuration = doc["spiralTurnDuration"];
+    if (doc.containsKey("stuckObstacleCount"))   timing.stuckObstacleCount = doc["stuckObstacleCount"];
+    if (doc.containsKey("stuckTimeWindow"))      timing.stuckTimeWindow = doc["stuckTimeWindow"];
+    if (doc.containsKey("escapeTurnDuration"))   timing.escapeTurnDuration = doc["escapeTurnDuration"];
+    
+    // Reset ke default jika diminta
+    if (doc.containsKey("resetDefaults") && doc["resetDefaults"] == true) {
+        timing.resetDefaults();
+    }
+    
+    timing.save();
+    
+    Serial.println("[API] Timing settings updated from web and saved to NVS");
+    server.send(200, "application/json", "{\"success\":true,\"message\":\"Settings updated\"}");
+}
+
 void ApiClient::startWebServer() {
     // CORS preflight
     server.on("/command", HTTP_OPTIONS, [this]() { _handleCorsOptions(); });
     server.on("/status", HTTP_OPTIONS, [this]() { _handleCorsOptions(); });
+    server.on("/diagnostic", HTTP_OPTIONS, [this]() { _handleCorsOptions(); });
+    server.on("/settings", HTTP_OPTIONS, [this]() { _handleCorsOptions(); });
     
     // Actual endpoints
     server.on("/command", HTTP_POST, [this]() { _handleCommand(); });
     server.on("/status", HTTP_GET, [this]() { _handleStatus(); });
+    server.on("/diagnostic", HTTP_GET, [this]() { _handleDiagnostic(); });
+    server.on("/settings", HTTP_POST, [this]() { _handleSettings(); });
     
     server.begin();
     Serial.println(">>> HTTP Server started on port " + String(ESP32_HTTP_PORT));
-    Serial.println(">>> Endpoints: POST /command, GET /status");
+    Serial.println(">>> Endpoints: POST /command, GET /status, GET /diagnostic, POST /settings");
 }
 
 void ApiClient::handleWebServer() {
@@ -440,13 +593,77 @@ void ApiClient::sendBattery(int percent, float voltage) {
     DynamicJsonDocument doc(200);
     doc["battery_percent"] = percent;
     doc["battery_voltage"] = voltage;
-    doc["estimated_time"] = String(percent / 10.0) + "h";
+    doc["estimated_time"] = battery.getEstimatedTime(lastPowerMode);
     
     String json;
     serializeJson(doc, json);
     
     int httpCode = http.POST(json);
     http.end();
+}
+
+// ===== BATTERY EVENTS =====
+
+void ApiClient::sendBatteryEvent(String event, int percent, float voltage) {
+    if (WiFi.status() != WL_CONNECTED) return;
+    
+    HTTPClient http;
+    String url = apiBaseUrl + "/battery-event";
+    
+    http.begin(url);
+    http.addHeader("Content-Type", "application/json");
+    
+    DynamicJsonDocument doc(256);
+    doc["event"] = event;
+    doc["battery_percent"] = percent;
+    doc["battery_voltage"] = voltage;
+    doc["power_mode"] = lastPowerMode;
+    
+    String json;
+    serializeJson(doc, json);
+    
+    Serial.print("[API] Sending battery event: ");
+    Serial.println(event);
+    
+    int httpCode = http.POST(json);
+    http.end();
+    
+    if (httpCode == 201) {
+        Serial.println("[API] Battery event logged successfully");
+    } else {
+        Serial.print("[API] Battery event failed: HTTP ");
+        Serial.println(httpCode);
+    }
+}
+
+void ApiClient::sendAutoStop(int percent, float voltage) {
+    // 1. Send battery event
+    sendBatteryEvent("auto_stop_low_battery", percent, voltage);
+    
+    // 2. Update state on server to 'stopping' so dashboard reflects auto-stop
+    if (WiFi.status() != WL_CONNECTED) return;
+    
+    HTTPClient http;
+    String url = apiBaseUrl + "/command-log";
+    
+    http.begin(url);
+    http.addHeader("Content-Type", "application/json");
+    
+    DynamicJsonDocument doc(256);
+    doc["command"] = "auto_stop_low_battery";
+    doc["source"] = "esp32";
+    doc["status"] = "success";
+    doc["response_time_ms"] = 0;
+    doc["esp32_ip"] = WiFi.localIP().toString();
+    
+    String json;
+    serializeJson(doc, json);
+    
+    int httpCode = http.POST(json);
+    http.end();
+    
+    // Also update local state
+    lastState = "stopping";
 }
 
 
