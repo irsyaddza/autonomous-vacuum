@@ -66,13 +66,6 @@ void setup() {
     robot.begin();
 
     // =========================================
-    // RANDOM SEED
-    // Anti-loop random movement
-    // =========================================
-
-    randomSeed(analogRead(34));
-
-    // =========================================
     // READY
     // =========================================
 
@@ -91,11 +84,10 @@ void setup() {
 
     Serial.println("\nFeatures:");
     Serial.println("- Autonomous Cleaning");
-    Serial.println("- Wall Following");
+    Serial.println("- Left Wall Following");
     Serial.println("- Obstacle Avoidance");
     Serial.println("- Cliff Detection");
     Serial.println("- Anti-loop Navigation");
-    Serial.println("- BLE Homing Ready");
 
     Serial.println("=================================\n");
 }
@@ -106,10 +98,8 @@ void setup() {
 
 void loop() {
 
-    // Robot Logic
     robot.update();
 
-    // API / Web Server
     api.update();
 
     delay(10);
