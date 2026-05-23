@@ -44,8 +44,8 @@ void RobotController::update() {
 
         _lastBatteryCheck = millis();
 
-        int pct = battery.getPercentage();
-        float volt = battery.getVoltage();
+        int pct     = battery.getPercentage();
+        float volt  = battery.getVoltage();
 
         api.sendBattery(pct, volt);
 
@@ -83,14 +83,18 @@ void RobotController::update() {
     }
 
     // =========================================
-    // LOW BATTERY AUTO RETURN
+    // LOW BATTERY AUTO STOP
     // =========================================
 
     if (battery.getPercentage() <= LOW_BATTERY_PERCENT) {
 
-        api.lastState = "returning";
+        api.lastState = "idle";
 
-        Serial.println("[ROBOT] LOW BATTERY -> RETURN HOME");
+        Serial.println("[ROBOT] LOW BATTERY -> IDLE");
+
+        stopAll();
+
+        return;
     }
 
     // =========================================
@@ -100,10 +104,6 @@ void RobotController::update() {
     if (targetState == "working") {
 
         handleCleaning();
-    }
-    else if (targetState == "returning") {
-
-        handleReturning();
     }
     else {
 
@@ -117,7 +117,6 @@ void RobotController::update() {
 
 void RobotController::handleCleaning() {
 
-    // Start brush & vacuum
     brush.forward();
     vacuum.setPower(api.lastPowerValue);
 
@@ -132,9 +131,25 @@ void RobotController::handleCleaning() {
         wheels.moveBackward();
         delay(BACKWARD_DELAY);
 
-        wheels.turnRight();
-        delay(TURN_DELAY);
+        // Belok menjauhi sisi cliff yang terdeteksi
+        if (sensors.isCliffLeft()) {
 
+            wheels.turnRight();
+            Serial.println("[SAFETY] Cliff kiri -> belok kanan");
+        }
+        else if (sensors.isCliffRight()) {
+
+            wheels.turnLeft();
+            Serial.println("[SAFETY] Cliff kanan -> belok kiri");
+        }
+        else {
+
+            // Cliff depan -> belok kanan default
+            wheels.turnRight();
+            Serial.println("[SAFETY] Cliff depan -> belok kanan");
+        }
+
+        delay(TURN_DELAY);
         wheels.stop();
 
         return;
@@ -156,7 +171,7 @@ void RobotController::handleCleaning() {
             _loopStartTime = millis();
         }
 
-        // Escape Mode
+        // Trigger escape mode
         if (millis() - _loopStartTime > LOOP_TIMEOUT) {
 
             Serial.println("[ANTI-LOOP] ESCAPE MODE");
@@ -164,33 +179,44 @@ void RobotController::handleCleaning() {
             _escapeMode = true;
         }
 
-        // Random escape
         if (_escapeMode) {
 
-            if (random(0, 2) == 0) {
+            // Alternating kiri-kanan
+            if (_escapeToggle) {
 
                 wheels.turnLeft();
+                Serial.println("[ANTI-LOOP] Escape -> KIRI");
             }
             else {
 
                 wheels.turnRight();
+                Serial.println("[ANTI-LOOP] Escape -> KANAN");
             }
 
-            delay(ESCAPE_DELAY);
-
-            _escapeMode = false;
+            _escapeToggle  = !_escapeToggle;
+            _escapeMode    = false;
             _loopStartTime = 0;
+
+            delay(ESCAPE_DELAY);
         }
         else {
 
-            // Normal turn
-            if (sensors.isLeftBlocked()) {
+            // Normal turn: hindari sisi yang terblokir
+            if (sensors.isLeftBlocked() && !sensors.isRightBlocked()) {
 
                 wheels.turnRight();
+                Serial.println("[NAVIGATION] Obs kiri -> belok kanan");
+            }
+            else if (sensors.isRightBlocked() && !sensors.isLeftBlocked()) {
+
+                wheels.turnLeft();
+                Serial.println("[NAVIGATION] Obs kanan -> belok kiri");
             }
             else {
 
+                // Kedua sisi blokir atau kosong -> ikut wall following (kiri)
                 wheels.turnLeft();
+                Serial.println("[NAVIGATION] Default -> belok kiri");
             }
 
             delay(TURN_DELAY);
@@ -200,56 +226,23 @@ void RobotController::handleCleaning() {
     }
 
     // =========================================
-    // WALL FOLLOWING
+    // WALL FOLLOWING (LEFT)
     // =========================================
 
     if (sensors.isLeftBlocked()) {
 
-        // Stay near wall
+        // Dinding kiri terdeteksi -> tetap sejajar, sedikit geser kanan
         wheels.turnRight();
         delay(100);
     }
     else {
 
-        // Edge-to-center behavior
+        // Tidak ada dinding kiri -> maju
         wheels.moveForward();
     }
-}
 
-// =====================================================
-// RETURN HOME MODE
-// =====================================================
-
-void RobotController::handleReturning() {
-
-    Serial.println("[HOMING] RETURNING HOME");
-
-    // Placeholder homing logic
-    // Future:
-    // - BLE RSSI Navigation
-    // - IR Docking
-
-    wheels.moveBackward();
-    delay(300);
-
-    wheels.turnRight();
-    delay(500);
-
-    wheels.moveForward();
-}
-
-// =====================================================
-// SAFETY
-// =====================================================
-
-void RobotController::checkSafety() {
-
-    if (sensors.isCliffDetected()) {
-
-        stopAll();
-
-        Serial.println("[SAFETY] Emergency stop");
-    }
+    // Reset loop timer saat jalan normal
+    _loopStartTime = 0;
 }
 
 // =====================================================

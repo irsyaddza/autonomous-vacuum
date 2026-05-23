@@ -24,10 +24,6 @@ public:
     bool isCliffRight();
     bool isCliffDetected();
 
-    // BLE RSSI Homing
-    void updateRSSI(int rssi);
-    int getRSSI();
-
 private:
 
     // Obstacle states
@@ -39,9 +35,6 @@ private:
     bool _cliffFront = false;
     bool _cliffLeft  = false;
     bool _cliffRight = false;
-
-    // BLE RSSI
-    int _rssi = -100;
 };
 
 #endif

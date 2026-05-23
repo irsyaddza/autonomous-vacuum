@@ -50,46 +50,18 @@ bool SensorArray::readCliffs() {
 // OBSTACLE GETTER
 // =====================================================
 
-bool SensorArray::isFrontBlocked() {
-    return _obsFront;
-}
-
-bool SensorArray::isLeftBlocked() {
-    return _obsLeft;
-}
-
-bool SensorArray::isRightBlocked() {
-    return _obsRight;
-}
+bool SensorArray::isFrontBlocked() { return _obsFront; }
+bool SensorArray::isLeftBlocked()  { return _obsLeft;  }
+bool SensorArray::isRightBlocked() { return _obsRight; }
 
 // =====================================================
 // CLIFF GETTER
 // =====================================================
 
-bool SensorArray::isCliffFront() {
-    return _cliffFront;
-}
-
-bool SensorArray::isCliffLeft() {
-    return _cliffLeft;
-}
-
-bool SensorArray::isCliffRight() {
-    return _cliffRight;
-}
+bool SensorArray::isCliffFront()    { return _cliffFront; }
+bool SensorArray::isCliffLeft()     { return _cliffLeft;  }
+bool SensorArray::isCliffRight()    { return _cliffRight; }
 
 bool SensorArray::isCliffDetected() {
     return (_cliffLeft || _cliffFront || _cliffRight);
-}
-
-// =====================================================
-// RSSI HOMING
-// =====================================================
-
-void SensorArray::updateRSSI(int rssi) {
-    _rssi = rssi;
-}
-
-int SensorArray::getRSSI() {
-    return _rssi;
 }
