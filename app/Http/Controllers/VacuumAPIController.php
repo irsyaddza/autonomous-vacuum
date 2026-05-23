@@ -10,83 +10,6 @@ use Illuminate\Http\Request;
 
 class VacuumAPIController extends Controller
 {
-    /**
-     * GET /api/vacuum/status
-     * Mengambil status vacuum terbaru (untuk ESP32)
-     * Digunakan ESP32 untuk polling command dari web
-     */
-    public function getStatus()
-    {
-        try {
-            $vacuumStatus = VacuumStatus::first();
-            
-            if (!$vacuumStatus) {
-                // Atur default mode stanby
-                $vacuumStatus = VacuumStatus::create([
-                    'state' => 'standby',
-                    'power_mode' => 'normal',
-                    'power_value' => 200
-                ]);
-            }
-
-            return response()->json([
-                'success' => true,
-                'data' => [
-                    'state' => $vacuumStatus->state,           // standby, working, stopping, returning
-                    'power_mode' => $vacuumStatus->power_mode, // eco, normal, strong
-                    'power_value' => $vacuumStatus->power_value, // 150, 200, 255
-                    'updated_at' => $vacuumStatus->updated_at
-                ]
-            ], 200);
-
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Error: ' . $e->getMessage()
-            ], 500);
-        }
-    }
-
-    /**
-     * POST /api/vacuum/command
-     * Update state/command vacuum (dari web app)
-     * Commands: start, stop, return_home
-     */
-    public function sendCommand(Request $request)
-    {
-        try {
-            $validated = $request->validate([
-                'command' => 'required|in:start,stop,return_home'
-            ]);
-
-            $stateMap = [
-                'start' => 'working',
-                'stop' => 'stopping',
-                'return_home' => 'returning'
-            ];
-
-            $vacuumStatus = VacuumStatus::first() ?? new VacuumStatus();
-            $vacuumStatus->state = $stateMap[$validated['command']];
-            $vacuumStatus->save();
-
-            return response()->json([
-                'success' => true,
-                'message' => 'Command sent: ' . $validated['command'],
-                'data' => [
-                    'state' => $vacuumStatus->state,
-                    'updated_at' => $vacuumStatus->updated_at
-                ]
-            ], 200);
-
-        } catch (\Illuminate\Validation\ValidationException $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Validasi gagal',
-                'errors' => $e->errors()
-            ], 422);
-        }
-    }
-
 
     /**
      * POST /api/vacuum/battery
@@ -161,29 +84,7 @@ class VacuumAPIController extends Controller
         }
     }
 
-    /**
-     * GET /api/vacuum/battery/history
-     * Mengambil history battery 
-     */
-    public function getBatteryHistory($minutes = 60)
-    {
-        try {
-            $batteryLogs = BatteryLog::where('created_at', '>=', now()->subMinutes($minutes))
-                ->orderBy('created_at', 'asc')
-                ->get();
 
-            return response()->json([
-                'success' => true,
-                'data' => $batteryLogs
-            ], 200);
-
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Error: ' . $e->getMessage()
-            ], 500);
-        }
-    }
 
     /**
      * GET /api/vacuum/full-status

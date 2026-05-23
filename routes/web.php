@@ -17,15 +17,12 @@ Route::get('diagnostic', function () {
 Route::prefix('v1')->name('api.')->group(function () {
     Route::prefix('vacuum')->group(function () {
         
-        // ===== GET Endpoints (Polling from ESP32 & Web App) =====
-        Route::get('status', [VacuumAPIController::class, 'getStatus'])->name('vacuum.status');
+        // ===== GET Endpoints (Data Fetching from Web App) =====
         Route::get('battery/latest', [VacuumAPIController::class, 'getLatestBattery'])->name('vacuum.battery.latest');
-        Route::get('battery/history', [VacuumAPIController::class, 'getBatteryHistory'])->name('vacuum.battery.history');
         Route::get('full-status', [VacuumAPIController::class, 'getFullStatus'])->name('vacuum.full-status');
         Route::get('command-logs', [VacuumAPIController::class, 'getCommandLogs'])->name('vacuum.command-logs');
         
-        // ===== POST Endpoints (Commands from Web App & ESP32) =====
-        Route::post('command', [VacuumAPIController::class, 'sendCommand'])->name('vacuum.command');
+        // ===== POST Endpoints (Telemetry from ESP32) =====
         Route::post('battery', [VacuumAPIController::class, 'updateBattery'])->name('vacuum.battery');
 
         // ===== Direct HTTP Architecture Endpoints =====
