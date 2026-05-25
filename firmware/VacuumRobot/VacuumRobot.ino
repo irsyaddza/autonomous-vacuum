@@ -11,6 +11,7 @@
 
 #include "ApiClient.h"
 #include "RobotController.h"
+#include "TimingSettings.h"
 
 // =====================================================
 // GLOBAL OBJECTS
@@ -25,6 +26,7 @@ BatteryMonitor battery;
 
 ApiClient api;
 RobotController robot;
+TimingSettings timing;
 
 // =====================================================
 // SETUP
@@ -48,6 +50,7 @@ void setup() {
 
     sensors.begin();
     battery.begin();
+    timing.load();
 
     // =========================================
     // WIFI & API
