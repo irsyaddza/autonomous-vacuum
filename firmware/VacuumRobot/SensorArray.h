@@ -17,6 +17,7 @@ public:
     bool isFrontBlocked();
     bool isLeftBlocked();
     bool isRightBlocked();
+    bool isAnyObstacle();
 
     // Cliff
     bool isCliffFront();

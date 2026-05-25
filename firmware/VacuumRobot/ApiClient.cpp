@@ -355,9 +355,9 @@ void ApiClient::_handleDiagnostic() {
     _addCorsHeaders();
     
     // Read raw digital values from all 6 sensors
-    int obsL = digitalRead(PIN_IR_LEFT);
-    int obsF = digitalRead(PIN_IR_FRONT);
-    int obsR = digitalRead(PIN_IR_RIGHT);
+    int obsL = digitalRead(PIN_OB_LEFT);
+    int obsF = digitalRead(PIN_OB_FRONT);
+    int obsR = digitalRead(PIN_OB_RIGHT);
     int clfL = digitalRead(PIN_CLIFF_LEFT);
     int clfF = digitalRead(PIN_CLIFF_FRONT);
     int clfR = digitalRead(PIN_CLIFF_RIGHT);

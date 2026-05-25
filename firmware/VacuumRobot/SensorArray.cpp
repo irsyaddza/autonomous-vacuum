@@ -53,6 +53,7 @@ bool SensorArray::readCliffs() {
 bool SensorArray::isFrontBlocked() { return _obsFront; }
 bool SensorArray::isLeftBlocked()  { return _obsLeft;  }
 bool SensorArray::isRightBlocked() { return _obsRight; }
+bool SensorArray::isAnyObstacle()   { return (_obsFront || _obsLeft || _obsRight); }
 
 // =====================================================
 // CLIFF GETTER
