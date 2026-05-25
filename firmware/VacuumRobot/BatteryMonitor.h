@@ -30,7 +30,6 @@ class BatteryMonitor {
 public:
 
     void begin();
-<<<<<<< Updated upstream
     float getVoltage();         // Returns stable voltage (anti-sag)
     float getRawVoltage();      // Returns current actual voltage (for diagnostics)
     int getPercentage();
@@ -38,33 +37,22 @@ public:
     String getEstimatedTime(String mode);   // Returns "Xh Ym" format for specific mode
     
     // Battery protection
-    bool isLowBattery();        // True if ≤ BATTERY_WARNING_PCT (15%)
-    bool isCritical();          // True if ≤ BATTERY_CRITICAL_PCT (0%)
+    bool isLowBattery();        // True if <= BATTERY_WARNING_PCT (15%)
+    bool isCritical();          // True if <= BATTERY_CRITICAL_PCT (0%)
     bool canStart();            // True if > BATTERY_BLOCK_START_PCT (10%)
     
 private:
     // Calibration factor for Voltage Divider
     // R1=30kΩ, R2=10kΩ: ideal = 4.0
-    // Calibrated: actual 12.2V, ADC 3.054V → ratio 3.995
+    // Calibrated: actual 12.2V, ADC 3.054V -> ratio 3.995
     const float _calibrationFactor = 3.995;
     
-    // Stable voltage (anti-sag) — this is what we report
+    // Stable voltage (anti-sag) - this is what we report
     float _stableVoltage = 0.0;
     bool _initialized = false;
     
     // Internal helpers
     float _readFilteredVoltage();  // Read ADC with multi-sample averaging
-=======
-
-    float getVoltage();
-
-    int getPercentage();
-
-private:
-
-    // Kalibrasi voltage divider
-    float _calibrationFactor = 2.0;
->>>>>>> Stashed changes
 };
 
 #endif

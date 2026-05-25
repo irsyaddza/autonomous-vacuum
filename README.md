@@ -82,8 +82,8 @@ vacuum_web/
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/yourusername/vacuum_web.git
-   cd vacuum_web
+   git clone https://github.com/irsyaddza/autonomous-vacuum.git
+   cd autonomous-vacuum
    ```
 
 2. **Install dependencies**

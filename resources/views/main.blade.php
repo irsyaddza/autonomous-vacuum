@@ -84,24 +84,26 @@
                 </div>
                 <div class="card-body p-4">
                     <div class="row g-3">
-                        <div class="col-md-4">
+                        <div class="col-md-6">
                             <button class="btn btn-primary-glow w-100 py-4 rounded-3 d-flex flex-column align-items-center justify-content-center" onclick="startVacuum()">
                                 <i class="fas fa-play fa-2x mb-3"></i>
                                 <span class="fw-bold tracking-wide">START</span>
                             </button>
                         </div>
-                        <div class="col-md-4">
+                        <div class="col-md-6">
                             <button class="btn btn-danger-glow w-100 py-4 rounded-3 d-flex flex-column align-items-center justify-content-center" onclick="stopVacuum()">
                                 <i class="fas fa-stop fa-2x mb-3"></i>
                                 <span class="fw-bold tracking-wide">STOP</span>
                             </button>
                         </div>
+                        {{-- 
                         <div class="col-md-4">
                             <button class="btn btn-warning-glow w-100 py-4 rounded-3 d-flex flex-column align-items-center justify-content-center" onclick="returnToBase()">
                                 <i class="fas fa-home fa-2x mb-3"></i>
                                 <span class="fw-bold tracking-wide">RETURN</span>
                             </button>
                         </div>
+                        --}}
                     </div>
                 </div>
             </div>

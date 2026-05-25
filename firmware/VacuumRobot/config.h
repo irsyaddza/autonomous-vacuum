@@ -101,4 +101,40 @@
 
 #define LOW_BATTERY_PERCENT 20
 
+// =====================================================
+// CLEANING ALGORITHM SETTINGS
+// =====================================================
+// Obstacle avoidance timing
+#define BACKUP_DURATION         500     // ms - durasi mundur saat ada obstacle
+#define TURN_DURATION_MIN       500     // ms - durasi belok minimum (~90°)
+#define TURN_DURATION_MAX       1000    // ms - durasi belok maksimum (~180°)
+#define TURN_DURATION_SMALL     350     // ms - belok kecil (~60°) untuk obstacle samping
+
+// Cliff avoidance timing (prioritas lebih tinggi)
+#define CLIFF_BACKUP_DURATION   600     // ms - durasi mundur saat cliff (lebih lama)
+#define CLIFF_TURN_DURATION     800     // ms - durasi putar 180° saat cliff
+
+// Spiral pattern settings
+#define SPIRAL_INITIAL_DURATION 500     // ms - durasi lurus awal spiral
+#define SPIRAL_INCREMENT        100     // ms - penambahan durasi setiap putaran spiral
+#define SPIRAL_MAX_DURATION     3000    // ms - durasi lurus maksimum sebelum pindah ke random bounce
+#define SPIRAL_TURN_DURATION    300     // ms - durasi belok 90° saat spiral
+
+// Stuck detection
+#define STUCK_OBSTACLE_COUNT    3       // Jumlah obstacle berturut-turut sebelum escape
+#define STUCK_TIME_WINDOW       4000    // ms - jendela waktu untuk stuck detection
+#define ESCAPE_TURN_DURATION    1500    // ms - durasi putar escape (~360°)
+
+// Sensor debounce
+#define SENSOR_DEBOUNCE_COUNT   2       // Jumlah consecutive reads untuk konfirmasi sensor
+
+// =====================================================
+// SOFT START SETTINGS
+// =====================================================
+// PWM dinaikkan bertahap saat motor mulai (mengurangi inrush current)
+#define SOFT_START_RAMP_STEP       5    // PWM increment per step (1-50)
+#define SOFT_START_RAMP_INTERVAL   10   // ms between steps (~500ms full ramp 0->255)
+// Catatan: Total waktu ramp ≈ (target_pwm / RAMP_STEP) * RAMP_INTERVAL
+// Contoh Normal mode: (200 / 5) * 10 = 400ms
+
 #endif
