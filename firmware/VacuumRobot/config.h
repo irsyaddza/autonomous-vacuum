@@ -29,8 +29,8 @@
 // IR OBSTACLE SENSORS
 // =====================================================
 
-#define PIN_OB_LEFT         16
-#define PIN_OB_FRONT        17
+#define PIN_OB_LEFT         33
+#define PIN_OB_FRONT        34
 #define PIN_OB_RIGHT        18
 
 // =====================================================
@@ -51,7 +51,7 @@
 // BUTTON & BUZZER
 // =====================================================
 
-#define PIN_WIFI_RESET      0
+#define PIN_WIFI_RESET      4
 #define PIN_BUZZER          27
 
 // =====================================================
