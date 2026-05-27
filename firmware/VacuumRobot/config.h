@@ -6,8 +6,8 @@
 // =====================================================
 
 // Brush Motor
-#define PIN_BRUSH_FWD       23
-#define PIN_BRUSH_REV       25
+#define PIN_BRUSH_FWD       25
+#define PIN_BRUSH_REV       23
 
 // Vacuum Motor
 #define PIN_VACUUM_PWM_1    26
