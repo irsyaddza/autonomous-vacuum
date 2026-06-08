@@ -38,10 +38,10 @@ bool SensorArray::readObstacles() {
 
 bool SensorArray::readCliffs() {
 
-    // Active LOW
-    _cliffLeft  = (digitalRead(PIN_CLIFF_LEFT)  == LOW);
-    _cliffFront = (digitalRead(PIN_CLIFF_FRONT) == LOW);
-    _cliffRight = (digitalRead(PIN_CLIFF_RIGHT) == LOW);
+    // Active HIGH (High means no floor / cliff detected)
+    _cliffLeft  = (digitalRead(PIN_CLIFF_LEFT)  == HIGH);
+    _cliffFront = (digitalRead(PIN_CLIFF_FRONT) == HIGH);
+    _cliffRight = (digitalRead(PIN_CLIFF_RIGHT) == HIGH);
 
     return (_cliffLeft || _cliffFront || _cliffRight);
 }
