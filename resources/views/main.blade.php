@@ -7,7 +7,7 @@
         </div>
         <div class="mt-3 mt-md-0">
             <button class="btn btn-outline-danger shadow-sm" onclick="resetEsp32Connection()">
-                <i class="fas fa-network-wired me-2"></i>Reset Connection
+                <i class="fas fa-wifi me-2"></i>Clear Connection
             </button>
         </div>
     </div>
@@ -87,24 +87,19 @@
                 </div>
                 <div class="card-body p-4">
                     <div class="row g-3">
-                        <div class="col-md-4">
+                        <div class="col-6">
                             <button class="btn btn-primary-glow w-100 py-4 rounded-3 d-flex flex-column align-items-center justify-content-center" onclick="startVacuum()">
                                 <i class="fas fa-play fa-2x mb-3"></i>
                                 <span class="fw-bold tracking-wide">START</span>
                             </button>
                         </div>
-                        <div class="col-md-4">
+                        <div class="col-6">
                             <button class="btn btn-danger-glow w-100 py-4 rounded-3 d-flex flex-column align-items-center justify-content-center" onclick="stopVacuum()">
                                 <i class="fas fa-stop fa-2x mb-3"></i>
                                 <span class="fw-bold tracking-wide">STOP</span>
                             </button>
                         </div>
-                        <div class="col-md-4">
-                            <button class="btn btn-warning-glow w-100 py-4 rounded-3 d-flex flex-column align-items-center justify-content-center" onclick="returnToBase()">
-                                <i class="fas fa-home fa-2x mb-3"></i>
-                                <span class="fw-bold tracking-wide">RETURN</span>
-                            </button>
-                        </div>
+                        <!-- Return button hidden as requested -->
                     </div>
                 </div>
             </div>
