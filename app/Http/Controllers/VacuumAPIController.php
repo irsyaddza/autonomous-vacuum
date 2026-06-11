@@ -385,4 +385,26 @@ class VacuumAPIController extends Controller
             ], 500);
         }
     }
+
+    /**
+     * POST /v1/vacuum/reset-devices
+     * Clear all ESP32 devices from database to allow clean reconnect
+     */
+    public function resetDevices()
+    {
+        try {
+            Esp32Device::truncate();
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'All ESP32 devices have been cleared from database. Please connect your robot to the network again.'
+            ], 200);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error: ' . $e->getMessage()
+            ], 500);
+        }
+    }
 }

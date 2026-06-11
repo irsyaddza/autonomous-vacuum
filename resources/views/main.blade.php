@@ -6,6 +6,9 @@
             <p class="text-secondary mb-0">Monitor and control your autonomous vacuum.</p>
         </div>
         <div class="mt-3 mt-md-0">
+            <button class="btn btn-outline-danger shadow-sm" onclick="resetEsp32Connection()">
+                <i class="fas fa-network-wired me-2"></i>Reset Connection
+            </button>
         </div>
     </div>
 
@@ -439,6 +442,29 @@
             } catch (err) {
                 showNotification('error', '❌ ESP32 unreachable. Try again.');
                 logCommandToServer(mode, 'failed', err.responseTime || 0, esp32Ip);
+            }
+        }
+
+        // ===== RESET CONNECTION =====
+        function resetEsp32Connection() {
+            if (confirm("Are you sure you want to reset the ESP32 connection? This will clear the saved IP from the database. You will need to reset the WiFi on the ESP32 to register the new IP.")) {
+                const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+                
+                $.ajax({
+                    url: `${API_BASE_URL}/reset-devices`,
+                    type: 'POST',
+                    headers: { 'X-CSRF-TOKEN': csrfToken },
+                    success: (res) => {
+                        if (res.success) {
+                            showNotification('success', res.message, true);
+                            esp32Ip = null; // Clear local IP
+                            updateStatusUI({ state: 'standby', power_mode: 'normal' });
+                        }
+                    },
+                    error: (err) => {
+                        showNotification('error', '❌ Failed to reset connection.');
+                    }
+                });
             }
         }
 
