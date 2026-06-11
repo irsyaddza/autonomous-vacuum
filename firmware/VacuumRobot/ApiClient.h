@@ -37,15 +37,20 @@ public:
     String lastDirection = "";
 
 private:
-    void _handleCommand();       // Handler for POST /command
-    void _handleStatus();        // Handler for GET /status
-    void _handleDiagnostic();    // Handler for GET /diagnostic
-    void _handleSettings();      // Handler for POST /settings
-    void _handleCorsOptions();   // Handler for OPTIONS (CORS preflight)
-    void _addCorsHeaders();      // Add CORS headers to response
+    void _handleCommand();           // Handler for POST /command
+    void _handleStatus();            // Handler for GET /status
+    void _handleDiagnostic();        // Handler for GET /diagnostic
+    void _handleSettings();          // Handler for POST /settings
+    void _handleCorsOptions();       // Handler for OPTIONS (CORS preflight)
+    void _addCorsHeaders();          // Add CORS headers to response
+    void _handleFirmwarePage();      // Handler for GET /firmware (OTA upload page)
+    void _handleFirmwareUpload();    // Handler for POST /update (OTA binary upload)
     
     String apiBaseUrl;           // Stored API URL
     Preferences preferences;     // Preferences for NVS storage
+    
+    bool isRegistered = false;
+    unsigned long lastRegistrationAttempt = 0;
 };
 
 #endif
