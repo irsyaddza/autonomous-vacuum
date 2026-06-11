@@ -53,7 +53,7 @@
 
 // ===== DIRECT HTTP SERVER CONFIG =====
 #define ESP32_HTTP_PORT     80      // Port for receiving direct commands from browser
-#define FIRMWARE_VERSION    "2.0.4A" // Firmware version for device registration
+#define FIRMWARE_VERSION    "2.1.4" // Firmware version for device registration
 
 // ===== MOTOR SETTINGS =====
 #define VACUUM_POWER_NORMAL 200     // Default PWM untuk vacuum NORMAL mode (0-255)

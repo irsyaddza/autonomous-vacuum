@@ -200,6 +200,24 @@ void ApiClient::connectWiFi() {
     )";
     wm.setCustomHeadElement(custom_css);
     
+    // Inject custom routes into WiFiManager's web server so /power is accessible in AP mode (192.168.4.1)
+    wm.setWebServerCallback([&wm, this]() {
+        if (wm.server) {
+            wm.server->on("/power", HTTP_GET, [&wm, this]() { _handlePowerPage(wm.server.get()); });
+            wm.server->on("/power-data", HTTP_GET, [&wm, this]() { _handlePowerData(wm.server.get()); });
+            wm.server->on("/firmware", HTTP_GET, [&wm, this]() { _handleFirmwarePage(wm.server.get()); });
+            wm.server->on("/update", HTTP_POST, [&wm, this]() {
+                wm.server->sendHeader("Connection", "close");
+                bool success = !Update.hasError();
+                String msg = success ? "{\"success\":true,\"message\":\"Firmware updated! Restarting robot...\"}" 
+                                     : "{\"success\":false,\"message\":\"Update FAILED! Check serial log.\"}";
+                wm.server->send(success ? 200 : 500, "application/json", msg);
+                delay(500);
+                ESP.restart();
+            }, [&wm, this]() { _handleFirmwareUpload(wm.server.get()); });
+        }
+    });
+    
     Serial.print("Opening AP: ");
     Serial.println(WIFI_AP_NAME);
     bool res = wm.autoConnect(WIFI_AP_NAME, WIFI_AP_PASSWORD); 
@@ -478,8 +496,12 @@ void ApiClient::startWebServer() {
     server.on("/diagnostic", HTTP_GET, [this]() { _handleDiagnostic(); });
     server.on("/settings", HTTP_POST, [this]() { _handleSettings(); });
     
+    // Power Management Web
+    server.on("/power", HTTP_GET, [this]() { _handlePowerPage(&server); });
+    server.on("/power-data", HTTP_GET, [this]() { _handlePowerData(&server); });
+    
     // OTA Firmware Update
-    server.on("/firmware", HTTP_GET, [this]() { _handleFirmwarePage(); });
+    server.on("/firmware", HTTP_GET, [this]() { _handleFirmwarePage(&server); });
     server.on("/update", HTTP_POST, [this]() {
         server.sendHeader("Connection", "close");
         bool success = !Update.hasError();
@@ -488,7 +510,7 @@ void ApiClient::startWebServer() {
         server.send(success ? 200 : 500, "application/json", msg);
         delay(500);
         ESP.restart();
-    }, [this]() { _handleFirmwareUpload(); });
+    }, [this]() { _handleFirmwareUpload(&server); });
     
     server.begin();
     Serial.println(">>> HTTP Server started on port " + String(ESP32_HTTP_PORT));
@@ -568,7 +590,7 @@ void ApiClient::logCommandToServer(String command, String status, int responseMs
 
 // ===== OTA FIRMWARE UPDATE =====
 
-void ApiClient::_handleFirmwarePage() {
+void ApiClient::_handleFirmwarePage(WebServer* customServer) {
     String html = "";
     html += "<!DOCTYPE html><html lang=\"en\"><head>";
     html += "<meta charset=\"UTF-8\">";
@@ -662,11 +684,13 @@ void ApiClient::_handleFirmwarePage() {
     html += "var fd=new FormData();fd.append(\"update\",file);xhr.send(fd);}";
     html += "function ss(t,m){sm.className=\"status-msg \"+t;sm.textContent=m;}";
     html += "</script></body></html>";
-    server.send(200, "text/html", html);
+    WebServer* activeServer = customServer ? customServer : &server;
+    activeServer->send(200, "text/html", html);
 }
 
-void ApiClient::_handleFirmwareUpload() {
-    HTTPUpload& upload = server.upload();
+void ApiClient::_handleFirmwareUpload(WebServer* customServer) {
+    WebServer* activeServer = customServer ? customServer : &server;
+    HTTPUpload& upload = activeServer->upload();
 
     if (upload.status == UPLOAD_FILE_START) {
         Serial.print("[OTA] Starting update: ");
@@ -751,6 +775,13 @@ void ApiClient::sendBattery(int percent, float voltage) {
     
     int httpCode = http.POST(json);
     http.end();
+    
+    lastSyncTime = millis();
+    if (httpCode == 201 || httpCode == 200) {
+        lastSyncStatus = "Success (HTTP " + String(httpCode) + ")";
+    } else {
+        lastSyncStatus = "Failed (HTTP " + String(httpCode) + ")";
+    }
 }
 
 // ===== BATTERY EVENTS =====
@@ -779,9 +810,15 @@ void ApiClient::sendBatteryEvent(String event, int percent, float voltage) {
     int httpCode = http.POST(json);
     http.end();
     
-    if (httpCode == 201) {
+    lastSyncTime = millis();
+    
+    if (httpCode == 201 || httpCode == 200) {
+        lastBatteryEventStatus = "Success: " + event;
+        lastSyncStatus = "Event Success (HTTP " + String(httpCode) + ")";
         Serial.println("[API] Battery event logged successfully");
     } else {
+        lastBatteryEventStatus = "Failed: " + event;
+        lastSyncStatus = "Event Failed (HTTP " + String(httpCode) + ")";
         Serial.print("[API] Battery event failed: HTTP ");
         Serial.println(httpCode);
     }
@@ -877,4 +914,109 @@ void ApiClient::playWiFiResetBeep() {
     digitalWrite(PIN_BUZZER, LOW);
     
     Serial.println("Beep complete!");
+}
+
+// ===== POWER MANAGEMENT WEB =====
+
+void ApiClient::_handlePowerPage(WebServer* customServer) {
+    String html = "";
+    html += "<!DOCTYPE html><html lang=\"en\"><head>";
+    html += "<meta charset=\"UTF-8\">";
+    html += "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">";
+    html += "<title>Power Management - Vacuum</title>";
+    html += "<style>";
+    html += "@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');";
+    html += ":root{--primary:#3b82f6;--success:#10b981;--warning:#f59e0b;--danger:#ef4444;--bg:#f8fafc;--card:#ffffff;--text:#1e293b;--text-light:#64748b;--border:#e2e8f0;}";
+    html += "*{box-sizing:border-box;margin:0;padding:0;font-family:'Inter',sans-serif;}";
+    html += "body{background-color:var(--bg);color:var(--text);line-height:1.5;padding:20px;}";
+    html += ".container{max-width:600px;margin:0 auto;}";
+    html += ".header{text-align:center;margin-bottom:30px;}";
+    html += ".header h1{font-size:1.5rem;font-weight:700;color:var(--text);margin-bottom:5px;}";
+    html += ".header p{color:var(--text-light);font-size:0.9rem;}";
+    html += ".card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:20px;margin-bottom:20px;box-shadow:0 4px 6px -1px rgba(0,0,0,0.05);}";
+    html += ".grid{display:grid;grid-template-columns:1fr 1fr;gap:15px;}";
+    html += ".data-item{display:flex;flex-direction:column;}";
+    html += ".data-label{font-size:0.8rem;color:var(--text-light);text-transform:uppercase;letter-spacing:0.5px;font-weight:600;margin-bottom:4px;}";
+    html += ".data-value{font-size:1.25rem;font-weight:700;color:var(--text);}";
+    html += ".data-value.large{font-size:2.5rem;color:var(--primary);}";
+    html += ".badge{display:inline-block;padding:4px 10px;border-radius:999px;font-size:0.75rem;font-weight:600;}";
+    html += ".badge-success{background:rgba(16,185,129,0.1);color:var(--success);}";
+    html += ".badge-warning{background:rgba(245,158,11,0.1);color:var(--warning);}";
+    html += ".badge-danger{background:rgba(239,68,68,0.1);color:var(--danger);}";
+    html += ".badge-neutral{background:var(--bg);color:var(--text-light);}";
+    html += ".progress-container{width:100%;background:var(--border);border-radius:999px;height:12px;margin-top:10px;overflow:hidden;}";
+    html += ".progress-bar{height:100%;background:var(--primary);border-radius:999px;transition:width 0.5s ease, background-color 0.5s ease;}";
+    html += ".footer{text-align:center;font-size:0.8rem;color:var(--text-light);margin-top:30px;}";
+    html += ".sync-card{background:#f8fafc;border:1px dashed #cbd5e1;}";
+    html += "@media (max-width:480px){.grid{grid-template-columns:1fr;}}";
+    html += "</style></head><body>";
+    html += "<div class=\"container\">";
+    html += "<div class=\"header\">";
+    html += "<h1>⚡ Power Management</h1>";
+    html += "<p>Local Diagnostics & Telemetry Dashboard</p>";
+    html += "</div>";
+    html += "<div class=\"card\">";
+    html += "<div class=\"data-item\" style=\"align-items:center;margin-bottom:20px;\">";
+    html += "<span class=\"data-label\">Battery Level</span>";
+    html += "<span class=\"data-value large\" id=\"val-percent\">--%</span>";
+    html += "<div class=\"progress-container\"><div class=\"progress-bar\" id=\"bar-percent\" style=\"width:0%\"></div></div>";
+    html += "</div>";
+    html += "<div class=\"grid\">";
+    html += "<div class=\"data-item\"><span class=\"data-label\">Voltage</span><span class=\"data-value\" id=\"val-voltage\">-- V</span></div>";
+    html += "<div class=\"data-item\"><span class=\"data-label\">Raw ADC</span><span class=\"data-value\" id=\"val-adc\">--</span></div>";
+    html += "<div class=\"data-item\"><span class=\"data-label\">Est. Runtime</span><span class=\"data-value\" id=\"val-time\">--</span></div>";
+    html += "<div class=\"data-item\"><span class=\"data-label\">Power Mode</span><span class=\"data-value\" id=\"val-mode\">--</span></div>";
+    html += "</div></div>";
+    html += "<div class=\"card sync-card\">";
+    html += "<h3 style=\"font-size:1rem;margin-bottom:15px;color:var(--text);\">Server Synchronization</h3>";
+    html += "<div class=\"grid\">";
+    html += "<div class=\"data-item\"><span class=\"data-label\">Last Sync Status</span><span class=\"badge badge-neutral\" id=\"val-sync\" style=\"width:fit-content;\">--</span></div>";
+    html += "<div class=\"data-item\" style=\"grid-column: 1 / -1;\"><span class=\"data-label\">Time since last sync</span><span class=\"data-value\" style=\"font-size:1rem;\" id=\"val-ago\">--</span></div>";
+    html += "</div></div>";
+    html += "<div class=\"footer\">ESP32 Local Dashboard • Auto-refreshing</div>";
+    html += "</div>";
+    html += "<script>";
+    html += "function updateData(){";
+    html += "fetch('/power-data').then(r=>r.json()).then(d=>{";
+    html += "document.getElementById('val-percent').innerText = d.percent + '%';";
+    html += "document.getElementById('val-voltage').innerText = d.voltage.toFixed(2) + ' V';";
+    html += "document.getElementById('val-adc').innerText = d.raw_adc;";
+    html += "document.getElementById('val-time').innerText = d.estimated_time;";
+    html += "document.getElementById('val-mode').innerText = d.power_mode.toUpperCase();";
+    html += "const bar = document.getElementById('bar-percent');";
+    html += "bar.style.width = d.percent + '%';";
+    html += "bar.style.backgroundColor = d.percent > 50 ? 'var(--success)' : d.percent > 20 ? 'var(--warning)' : 'var(--danger)';";
+    html += "const syncBadge = document.getElementById('val-sync');";
+    html += "syncBadge.innerText = d.sync_status;";
+    html += "syncBadge.className = 'badge ' + (d.sync_status.includes('Success') ? 'badge-success' : d.sync_status.includes('Failed') ? 'badge-danger' : 'badge-neutral');";
+    html += "let ago = d.sync_ago_ms > 0 ? Math.floor(d.sync_ago_ms/1000) + ' seconds ago' : 'Never';";
+    html += "document.getElementById('val-ago').innerText = ago;";
+    html += "}).catch(e=>console.log('Error fetching data'));";
+    html += "}";
+    html += "updateData(); setInterval(updateData, 2000);";
+    html += "</script></body></html>";
+    
+    WebServer* activeServer = customServer ? customServer : &server;
+    activeServer->send(200, "text/html", html);
+}
+
+void ApiClient::_handlePowerData(WebServer* customServer) {
+    WebServer* activeServer = customServer ? customServer : &server;
+    activeServer->sendHeader("Access-Control-Allow-Origin", "*");
+    activeServer->sendHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+    activeServer->sendHeader("Access-Control-Allow-Headers", "Content-Type");
+    
+    DynamicJsonDocument doc(256);
+    doc["raw_adc"] = analogRead(PIN_BATTERY_ADC);
+    doc["voltage"] = battery.getVoltage();
+    doc["percent"] = battery.getPercentage();
+    doc["estimated_time"] = battery.getEstimatedTime(lastPowerMode);
+    doc["power_mode"] = lastPowerMode;
+    doc["sync_status"] = lastSyncStatus;
+    doc["event_status"] = lastBatteryEventStatus;
+    doc["sync_ago_ms"] = lastSyncTime > 0 ? (millis() - lastSyncTime) : 0;
+    
+    String response;
+    serializeJson(doc, response);
+    activeServer->send(200, "application/json", response);
 }
