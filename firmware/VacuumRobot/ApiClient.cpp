@@ -436,6 +436,7 @@ void ApiClient::_handleDiagnostic() {
     ts["spiralIncrement"] = timing.spiralIncrement;
     ts["spiralMaxDuration"] = timing.spiralMaxDuration;
     ts["spiralTurnDuration"] = timing.spiralTurnDuration;
+    ts["respiralIdleTime"] = timing.respiralIdleTime;
     ts["stuckObstacleCount"] = timing.stuckObstacleCount;
     ts["stuckTimeWindow"] = timing.stuckTimeWindow;
     ts["escapeTurnDuration"] = timing.escapeTurnDuration;
@@ -468,6 +469,7 @@ void ApiClient::_handleSettings() {
     if (doc.containsKey("spiralIncrement"))      timing.spiralIncrement = doc["spiralIncrement"];
     if (doc.containsKey("spiralMaxDuration"))    timing.spiralMaxDuration = doc["spiralMaxDuration"];
     if (doc.containsKey("spiralTurnDuration"))   timing.spiralTurnDuration = doc["spiralTurnDuration"];
+    if (doc.containsKey("respiralIdleTime"))      timing.respiralIdleTime = doc["respiralIdleTime"];
     if (doc.containsKey("stuckObstacleCount"))   timing.stuckObstacleCount = doc["stuckObstacleCount"];
     if (doc.containsKey("stuckTimeWindow"))      timing.stuckTimeWindow = doc["stuckTimeWindow"];
     if (doc.containsKey("escapeTurnDuration"))   timing.escapeTurnDuration = doc["escapeTurnDuration"];

@@ -25,6 +25,9 @@ struct TimingSettings {
     int spiralMaxDuration     = SPIRAL_MAX_DURATION;
     int spiralTurnDuration    = SPIRAL_TURN_DURATION;
     
+    // Re-spiral trigger
+    int respiralIdleTime      = RESPIRAL_IDLE_TIME;
+    
     // Stuck detection
     int stuckObstacleCount  = STUCK_OBSTACLE_COUNT;
     int stuckTimeWindow     = STUCK_TIME_WINDOW;
@@ -42,6 +45,7 @@ struct TimingSettings {
         spiralIncrement       = SPIRAL_INCREMENT;
         spiralMaxDuration     = SPIRAL_MAX_DURATION;
         spiralTurnDuration    = SPIRAL_TURN_DURATION;
+        respiralIdleTime      = RESPIRAL_IDLE_TIME;
         stuckObstacleCount  = STUCK_OBSTACLE_COUNT;
         stuckTimeWindow     = STUCK_TIME_WINDOW;
         escapeTurnDuration  = ESCAPE_TURN_DURATION;

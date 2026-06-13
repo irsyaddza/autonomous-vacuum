@@ -77,6 +77,9 @@
 #define SPIRAL_MAX_DURATION     30000    // ms - durasi lurus maksimum sebelum pindah ke random bounce
 #define SPIRAL_TURN_DURATION    3400     // ms - durasi belok 90° saat spiral
 
+// Re-spiral trigger
+#define RESPIRAL_IDLE_TIME      20000    // ms - durasi tanpa obstacle di open area sebelum re-trigger spiral
+
 // Stuck detection
 #define STUCK_OBSTACLE_COUNT    3       // Jumlah obstacle berturut-turut sebelum escape
 #define STUCK_TIME_WINDOW       4000    // ms - jendela waktu untuk stuck detection
