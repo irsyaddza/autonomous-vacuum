@@ -17,6 +17,16 @@
         </div>
     </div>
 
+    <!-- ESP32 Quick Links -->
+    <div class="d-flex flex-wrap gap-2 mb-4 stagger-1">
+        <button class="btn btn-sm btn-outline-info" onclick="openEsp32Page('/firmware')" id="btnFirmware" disabled>
+            <i class="fas fa-upload me-1"></i>Firmware Upload
+        </button>
+        <button class="btn btn-sm btn-outline-warning" onclick="openEsp32Page('/power')" id="btnPower" disabled>
+            <i class="fas fa-battery-half me-1"></i>Battery Diagnostic
+        </button>
+    </div>
+
     <!-- ESP32 Status Bar -->
     <div class="card mb-4 stagger-2">
         <div class="card-body py-3">
@@ -256,6 +266,11 @@
                         <label class="form-label small text-secondary">Belok Spiral (ms)</label>
                         <input type="number" class="form-control form-control-sm bg-dark text-white border-secondary" id="t_spiralTurnDuration" min="100" max="1000" step="50">
                     </div>
+                    <div class="mb-3">
+                        <label class="form-label small text-secondary">Re-Spiral Idle Time (ms)</label>
+                        <input type="number" class="form-control form-control-sm bg-dark text-white border-secondary" id="t_respiralIdleTime" min="5000" max="60000" step="1000">
+                        <small class="text-muted">Durasi tanpa obstacle di open area sebelum re-trigger spiral</small>
+                    </div>
                 </div>
             </div>
             <div class="alert alert-dark bg-opacity-25 border-0 mt-3 mb-0 small">
@@ -345,13 +360,27 @@
         function updateConnection(connected) {
             const dot = document.getElementById('connectionDot');
             const text = document.getElementById('connectionText');
+            const btnFw = document.getElementById('btnFirmware');
+            const btnPw = document.getElementById('btnPower');
             if (connected) {
                 dot.className = 'fas fa-circle text-success me-1';
                 text.textContent = `Connected (${esp32Ip})`;
+                btnFw.disabled = false;
+                btnPw.disabled = false;
             } else {
                 dot.className = 'fas fa-circle text-danger me-1';
                 text.textContent = 'Disconnected';
+                btnFw.disabled = true;
+                btnPw.disabled = true;
             }
+        }
+
+        function openEsp32Page(path) {
+            if (!esp32Ip) {
+                addLog('ERROR: ESP32 tidak terhubung. Discovery dulu.');
+                return;
+            }
+            window.open(`http://${esp32Ip}${path}`, '_blank');
         }
 
         // ===== Polling Control =====
@@ -496,6 +525,7 @@
             'backupDuration', 'turnDurationMin', 'turnDurationMax', 'turnDurationSmall',
             'cliffBackupDuration', 'cliffTurnDuration',
             'spiralInitialDuration', 'spiralIncrement', 'spiralMaxDuration', 'spiralTurnDuration',
+            'respiralIdleTime',
             'stuckObstacleCount', 'stuckTimeWindow', 'escapeTurnDuration'
         ];
 
