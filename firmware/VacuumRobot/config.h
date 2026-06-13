@@ -16,11 +16,11 @@
 // ===== MOTOR DRIVER 2 (L298N #2) - DRIVE WHEELS =====
 // Motor Roda - dikontrol dari website (maju, mundur, belok kiri, belok kanan)
 // Motor Roda Kiri terhubung ke OUT1 & OUT2
-#define PIN_WHEEL_LEFT_FWD   13  // IO13 → IN2 (Left Wheel Forward) [swapped]
-#define PIN_WHEEL_LEFT_REV   12  // IO12 → IN1 (Left Wheel Reverse) [swapped]
+#define PIN_WHEEL_LEFT_FWD   12  // IO13 → IN2 (Left Wheel Forward) [swapped]
+#define PIN_WHEEL_LEFT_REV   13  // IO12 → IN1 (Left Wheel Reverse) [swapped]
 // Motor Roda Kanan terhubung ke OUT3 & OUT4
-#define PIN_WHEEL_RIGHT_FWD  14  // IO14 → IN3 (Right Wheel Forward)
-#define PIN_WHEEL_RIGHT_REV  15  // IO15 → IN4 (Right Wheel Reverse)
+#define PIN_WHEEL_RIGHT_FWD  14  // IO15 → IN4 (Right Wheel Forward) [swapped]
+#define PIN_WHEEL_RIGHT_REV  15  // IO14 → IN3 (Right Wheel Reverse) [swapped]
 
 // Sensors (IR Obstacle Avoidance) - Digital Input
 #define PIN_IR_LEFT         33  // IO33 → IR1 Kiri
