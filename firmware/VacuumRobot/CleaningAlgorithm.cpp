@@ -181,22 +181,17 @@ void CleaningAlgorithm::_handleBackupObstacle() {
         wheels.moveBackward();
     } else {
         // Mundur selesai → mulai belok
-        // Simpan snapshot sensor SEKARANG karena setelah belok sensor bisa berubah
-        bool front = sensors.isFrontBlocked();
-        bool left  = sensors.isLeftBlocked();
-        bool right = sensors.isRightBlocked();
-        
         TurnDirection dir = _decideTurnDirection();
         
-        // Pilih durasi belok berdasarkan kondisi obstacle:
+        // Pilih durasi belok berdasarkan snapshot kondisi obstacle:
         unsigned long duration;
-        if (front && left && right) {
+        if (_obsWasFront && _obsWasLeft && _obsWasRight) {
             // Semua sisi terblokir (pojok) → putar besar
             duration = timing.turnDurationMax;
-        } else if (front) {
+        } else if (_obsWasFront) {
             // Depan terblokir → belok sedang-besar
             duration = random(timing.turnDurationMin, timing.turnDurationMax + 1);
-        } else if (left != right) {
+        } else if (_obsWasLeft != _obsWasRight) {
             // Hanya satu sisi terblokir, depan clear → belok kecil
             duration = timing.turnDurationSmall;
         } else {
@@ -312,6 +307,11 @@ void CleaningAlgorithm::_setState(CleanState newState) {
 void CleaningAlgorithm::_startBackupObstacle() {
     wheels.stop();
     
+    // Simpan snapshot sensor SEKARANG sebelum robot mundur
+    _obsWasFront = sensors.isFrontBlocked();
+    _obsWasLeft  = sensors.isLeftBlocked();
+    _obsWasRight = sensors.isRightBlocked();
+    
     // Stuck detection: jika terlalu sering obstacle dalam waktu singkat
     if (millis() - _lastObstacleTime < (unsigned long)timing.stuckTimeWindow) {
         _obstacleCount++;
@@ -354,9 +354,10 @@ unsigned long CleaningAlgorithm::_randomTurnDuration() {
 
 // Tentukan arah belok berdasarkan sensor mana yang triggered
 TurnDirection CleaningAlgorithm::_decideTurnDirection() {
-    bool front = sensors.isFrontBlocked();
-    bool left  = sensors.isLeftBlocked();
-    bool right = sensors.isRightBlocked();
+    // Gunakan snapshot obstacle yang disimpan sebelum mundur
+    bool front = _obsWasFront;
+    bool left  = _obsWasLeft;
+    bool right = _obsWasRight;
     
     // PRIORITAS 1: Semua sisi terblokir (pojok/sudut mati) → random
     if (front && left && right) {

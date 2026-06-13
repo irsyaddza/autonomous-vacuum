@@ -62,6 +62,11 @@ private:
     bool _cliffWasLeft  = false;
     bool _cliffWasRight = false;
     
+    // Obstacle state snapshot (saved when obstacle first detected)
+    bool _obsWasFront = false;
+    bool _obsWasLeft  = false;
+    bool _obsWasRight = false;
+    
     // Stuck detection
     unsigned long _lastObstacleTime = 0;
     int _obstacleCount = 0;
