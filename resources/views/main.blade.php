@@ -207,75 +207,6 @@
         </div>
     </div>
 
-    <!-- Command History Styles -->
-    <style>
-        /* Desktop table */
-        .table-dark { --bs-table-bg: transparent; }
-        .table-dark > tbody > tr {
-            border-bottom: 1px solid rgba(255,255,255,0.04);
-            transition: background 0.2s ease;
-        }
-        .table-dark > tbody > tr:hover { background: rgba(255,255,255,0.03); }
-        .table-dark > tbody > tr:last-child { border-bottom: none; }
-
-        /* Command badges */
-        .cmd-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            padding: 5px 12px;
-            border-radius: 8px;
-            font-size: 0.78rem;
-            font-weight: 700;
-            letter-spacing: 0.5px;
-            text-transform: uppercase;
-        }
-        .cmd-badge.cmd-start   { background: rgba(16,185,129,0.15); color: #34d399; }
-        .cmd-badge.cmd-stop    { background: rgba(239,68,68,0.15);  color: #f87171; }
-        .cmd-badge.cmd-return  { background: rgba(245,158,11,0.15); color: #fbbf24; }
-        .cmd-badge.cmd-eco     { background: rgba(16,185,129,0.12); color: #6ee7b7; }
-        .cmd-badge.cmd-normal  { background: rgba(14,165,233,0.15); color: #7dd3fc; }
-        .cmd-badge.cmd-strong  { background: rgba(239,68,68,0.12);  color: #fca5a5; }
-        .cmd-badge.cmd-battery { background: rgba(251,191,36,0.15); color: #fde68a; }
-        .cmd-badge.cmd-default { background: rgba(148,163,184,0.12); color: #cbd5e1; }
-
-        /* Status pills */
-        .status-pill {
-            display: inline-flex;
-            align-items: center;
-            gap: 5px;
-            padding: 3px 10px;
-            border-radius: 50rem;
-            font-size: 0.72rem;
-            font-weight: 600;
-        }
-        .status-pill.status-success { background: rgba(16,185,129,0.15); color: #34d399; }
-        .status-pill.status-failed  { background: rgba(239,68,68,0.15);  color: #f87171; }
-        .status-pill.status-timeout { background: rgba(245,158,11,0.15); color: #fbbf24; }
-
-        /* Source badge */
-        .source-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 4px;
-            font-size: 0.75rem;
-            color: var(--text-secondary);
-        }
-
-        /* Mobile list items */
-        .cmd-mobile-item {
-            padding: 14px 16px;
-            border-bottom: 1px solid rgba(255,255,255,0.04);
-            transition: background 0.2s ease;
-        }
-        .cmd-mobile-item:last-child { border-bottom: none; }
-        .cmd-mobile-item:active { background: rgba(255,255,255,0.03); }
-
-        /* Refresh spin animation */
-        .spin { animation: spin 0.8s linear infinite; }
-        @keyframes spin { to { transform: rotate(360deg); } }
-    </style>
-
     <!-- Inline script for page specific logic -->
     <script>
         // ===== CONFIGURATION =====
@@ -323,7 +254,7 @@
         // ===== ESP32 IP DISCOVERY =====
         async function discoverEsp32() {
             try {
-                const res = await $.get(`${API_BASE_URL}/device`);
+                const res = await fetch(`${API_BASE_URL}/device`).then(r => r.json());
                 if (res.success && res.data) {
                     esp32Ip = res.data.ip_address;
                     console.log(`✅ ESP32 discovered at: ${esp32Ip}`);
@@ -337,50 +268,46 @@
         }
 
         // ===== DIRECT HTTP TO ESP32 =====
-        function sendToEsp32(endpoint, payload) {
-            return new Promise((resolve, reject) => {
-                if (!esp32Ip) {
-                    reject(new Error('No ESP32 IP'));
-                    return;
-                }
+        async function sendToEsp32(endpoint, payload) {
+            if (!esp32Ip) throw new Error('No ESP32 IP');
 
-                const startTime = Date.now();
-
-                $.ajax({
-                    url: `http://${esp32Ip}/${endpoint}`,
-                    type: 'POST',
-                    contentType: 'application/json',
-                    data: JSON.stringify(payload),
-                    timeout: ESP32_TIMEOUT,
-                    success: (res) => {
-                        const elapsed = Date.now() - startTime;
-                        resolve({ ...res, responseTime: elapsed });
-                    },
-                    error: (xhr, status, error) => {
-                        const elapsed = Date.now() - startTime;
-                        reject({ status, error, responseTime: elapsed, responseJSON: xhr.responseJSON });
-                    }
+            const startTime = Date.now();
+            try {
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), ESP32_TIMEOUT);
+                const res = await fetch(`http://${esp32Ip}/${endpoint}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload),
+                    signal: controller.signal
                 });
-            });
+                clearTimeout(timeoutId);
+                const data = await res.json();
+                const elapsed = Date.now() - startTime;
+                if (!res.ok) {
+                    const err = new Error('HTTP ' + res.status);
+                    err.responseTime = elapsed;
+                    err.responseJSON = data;
+                    throw err;
+                }
+                return { ...data, responseTime: elapsed };
+            } catch (err) {
+                if (!err.responseTime) err.responseTime = Date.now() - startTime;
+                throw err;
+            }
         }
 
         // ===== LOG COMMAND TO LARAVEL (history) =====
         function logCommandToServer(command, status, responseTimeMs, esp32Ip) {
             const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-            
-            $.ajax({
-                url: `${API_BASE_URL}/command-log`,
-                type: 'POST',
+            fetch(`${API_BASE_URL}/command-log`, {
+                method: 'POST',
                 headers: { 'X-CSRF-TOKEN': csrfToken, 'Content-Type': 'application/json' },
-                data: JSON.stringify({
-                    command: command,
-                    source: 'web',
-                    status: status,
-                    response_time_ms: responseTimeMs,
-                    esp32_ip: esp32Ip
-                }),
-                error: (err) => console.error('Failed to log command:', err)
-            });
+                body: JSON.stringify({
+                    command, source: 'web', status,
+                    response_time_ms: responseTimeMs, esp32_ip: esp32Ip
+                })
+            }).catch(err => console.error('Failed to log command:', err));
         }
 
         // ===== COMMAND SENDER (Direct HTTP Only) =====
@@ -415,6 +342,8 @@
                 }
                 showNotification('error', '❌ ESP32 unreachable. Try again.');
                 logCommandToServer(command, 'failed', err.responseTime || 0, esp32Ip);
+                // Re-discover ESP32 for next command
+                discoverEsp32();
             }
         }
 
@@ -437,6 +366,8 @@
             } catch (err) {
                 showNotification('error', '❌ ESP32 unreachable. Try again.');
                 logCommandToServer(mode, 'failed', err.responseTime || 0, esp32Ip);
+                // Re-discover ESP32 for next command
+                discoverEsp32();
             }
         }
 
@@ -444,22 +375,19 @@
         function resetEsp32Connection() {
             if (confirm("Are you sure you want to reset the ESP32 connection? This will clear the saved IP from the database. You will need to reset the WiFi on the ESP32 to register the new IP.")) {
                 const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-                
-                $.ajax({
-                    url: `${API_BASE_URL}/reset-devices`,
-                    type: 'POST',
-                    headers: { 'X-CSRF-TOKEN': csrfToken },
-                    success: (res) => {
-                        if (res.success) {
-                            showNotification('success', res.message, true);
-                            esp32Ip = null; // Clear local IP
-                            updateStatusUI({ state: 'standby', power_mode: 'normal' });
-                        }
-                    },
-                    error: (err) => {
-                        showNotification('error', '❌ Failed to reset connection.');
+                fetch(`${API_BASE_URL}/reset-devices`, {
+                    method: 'POST',
+                    headers: { 'X-CSRF-TOKEN': csrfToken }
+                })
+                .then(r => r.json())
+                .then(res => {
+                    if (res.success) {
+                        showNotification('success', res.message, true);
+                        esp32Ip = null;
+                        updateStatusUI({ state: 'standby', power_mode: 'normal' });
                     }
-                });
+                })
+                .catch(() => showNotification('error', '❌ Failed to reset connection.'));
             }
         }
 
@@ -469,22 +397,14 @@
         window.returnToBase = () => sendVacuumCommand('return_home');
         window.setPowerMode = setPowerMode;
 
-        // ===== FETCHING DATA (still from Laravel for dashboard sync) =====
+        // ===== FETCHING DATA (from Laravel for dashboard sync) =====
         function fetchFullStatus() {
-            $.get(`${API_BASE_URL}/full-status`, (res) => {
-                if(res.success) {
-                    updateUI(res.vacuum, res.battery);
-                }
-            });
-        }
-
-
-        function fetchBatteryData() {
-            $.get(`${API_BASE_URL}/battery/latest`, (res) => {
-                if(res.success && res.data) {
-                    updateBatteryUI(res.data);
-                }
-            });
+            fetch(`${API_BASE_URL}/full-status`)
+                .then(r => r.json())
+                .then(res => {
+                    if (res.success) updateUI(res.vacuum, res.battery);
+                })
+                .catch(() => {});
         }
 
         // ===== UI UPDATE FUNCTIONS =====
@@ -584,39 +504,32 @@
         let lastBatteryEventId = null;
 
         function fetchBatteryEvents() {
-            $.get(`${API_BASE_URL}/battery-events/latest`, (res) => {
-                if (res.success && res.data) {
-                    const event = res.data;
-                    const eventKey = event.event + '_' + event.created_at;
-                    
-                    // Only show notification once per unique event
-                    if (eventKey !== lastBatteryEventId) {
-                        lastBatteryEventId = eventKey;
-                        lastBatteryEvent = event.event;
-                        
-                        if (event.event === 'auto_stop_low_battery') {
-                            showNotification('error', 
-                                `🔋 Robot auto-stopped! Battery depleted (${event.battery_percent}%, ${parseFloat(event.battery_voltage).toFixed(1)}V). Please charge the battery.`, 
-                                true
-                            );
-                            // Force refresh status
-                            fetchFullStatus();
-                        } else if (event.event === 'low_battery_warning') {
-                            showNotification('warning', 
-                                `⚠️ Low battery warning! ${event.battery_percent}% remaining (${parseFloat(event.battery_voltage).toFixed(1)}V). Robot will auto-stop at 0%.`, 
-                                true
-                            );
+            fetch(`${API_BASE_URL}/battery-events/latest`)
+                .then(r => r.json())
+                .then(res => {
+                    if (res.success && res.data) {
+                        const event = res.data;
+                        const eventKey = event.event + '_' + event.created_at;
+                        if (eventKey !== lastBatteryEventId) {
+                            lastBatteryEventId = eventKey;
+                            lastBatteryEvent = event.event;
+                            if (event.event === 'auto_stop_low_battery') {
+                                showNotification('error', 
+                                    `🔋 Robot auto-stopped! Battery depleted (${event.battery_percent}%, ${parseFloat(event.battery_voltage).toFixed(1)}V). Please charge the battery.`, true);
+                                fetchFullStatus();
+                            } else if (event.event === 'low_battery_warning') {
+                                showNotification('warning', 
+                                    `⚠️ Low battery warning! ${event.battery_percent}% remaining (${parseFloat(event.battery_voltage).toFixed(1)}V). Robot will auto-stop at 0%.`, true);
+                            }
                         }
+                    } else {
+                        lastBatteryEvent = null;
                     }
-                } else {
-                    lastBatteryEvent = null;
-                }
-            });
+                })
+                .catch(() => {});
         }
 
         // ===== COMMAND LOG HISTORY =====
-        let cmdLogInterval;
-
         function getCommandMeta(command) {
             const map = {
                 'start':                   { icon: 'fa-play',              css: 'cmd-start',   label: 'Start' },
@@ -698,36 +611,26 @@
             const icon = btn.querySelector('i');
             icon.classList.add('spin');
 
-            $.get(`${API_BASE_URL}/command-logs?limit=15`, (res) => {
-                icon.classList.remove('spin');
-
-                if (!res.success || !res.data || res.data.length === 0) {
-                    document.getElementById('cmdLogTableBody').innerHTML = '';
-                    document.getElementById('cmdLogMobileList').innerHTML = '';
-                    document.getElementById('cmdLogEmpty').classList.remove('d-none');
-                    return;
-                }
-
-                document.getElementById('cmdLogEmpty').classList.add('d-none');
-
-                // Desktop
-                document.getElementById('cmdLogTableBody').innerHTML =
-                    res.data.map(renderDesktopRow).join('');
-
-                // Mobile
-                document.getElementById('cmdLogMobileList').innerHTML =
-                    res.data.map(renderMobileItem).join('');
-
-                // Update timestamp
-                document.getElementById('cmdLogUpdatedAt').textContent = 'Updated just now';
-
-            }).fail(() => {
-                icon.classList.remove('spin');
-            });
+            fetch(`${API_BASE_URL}/command-logs?limit=15`)
+                .then(r => r.json())
+                .then(res => {
+                    icon.classList.remove('spin');
+                    if (!res.success || !res.data || res.data.length === 0) {
+                        document.getElementById('cmdLogTableBody').innerHTML = '';
+                        document.getElementById('cmdLogMobileList').innerHTML = '';
+                        document.getElementById('cmdLogEmpty').classList.remove('d-none');
+                        return;
+                    }
+                    document.getElementById('cmdLogEmpty').classList.add('d-none');
+                    document.getElementById('cmdLogTableBody').innerHTML = res.data.map(renderDesktopRow).join('');
+                    document.getElementById('cmdLogMobileList').innerHTML = res.data.map(renderMobileItem).join('');
+                    document.getElementById('cmdLogUpdatedAt').textContent = 'Updated just now';
+                })
+                .catch(() => icon.classList.remove('spin'));
         }
 
         // ===== INITIALIZATION =====
-        let statusInterval, batteryInterval, batteryEventInterval;
+        let statusInterval, batteryEventInterval, cmdLogInterval;
 
         document.addEventListener('DOMContentLoaded', async () => {
             // 1. Discover ESP32 IP
@@ -736,25 +639,20 @@
             // 2. Fetch initial dashboard state
             fetchFullStatus();
             
-            // 3. Keep polling for dashboard sync (status from Laravel DB)
+            // 3. Poll for dashboard sync (status + battery from Laravel DB)
             statusInterval = setInterval(fetchFullStatus, 20000);
-            batteryInterval = setInterval(fetchBatteryData, 10000);
             
             // 4. Poll for battery events (warnings & auto-stop)
             fetchBatteryEvents();
             batteryEventInterval = setInterval(fetchBatteryEvents, 10000);
-            
-            // 5. Re-discover ESP32 IP every 30 seconds
-            setInterval(discoverEsp32, 30000);
 
-            // 6. Fetch command logs & auto-refresh every 15s
+            // 5. Fetch command logs & auto-refresh every 15s
             fetchCommandLogs();
             cmdLogInterval = setInterval(fetchCommandLogs, 15000);
         });
 
         window.addEventListener('beforeunload', () => {
             clearInterval(statusInterval);
-            clearInterval(batteryInterval);
             clearInterval(batteryEventInterval);
             clearInterval(cmdLogInterval);
         });

@@ -288,47 +288,20 @@
                 <i class="fas fa-terminal me-2 text-success"></i>
                 <span class="fw-bold text-white">Raw JSON Log</span>
             </div>
-            <button class="btn btn-sm btn-outline-secondary" onclick="clearLog()">
-                <i class="fas fa-trash me-1"></i>Clear
-            </button>
+            <div class="d-flex align-items-center gap-3">
+                <div class="form-check form-switch mb-0">
+                    <input class="form-check-input" type="checkbox" id="logToggle" checked onchange="logEnabled = this.checked">
+                    <label class="form-check-label small text-secondary" for="logToggle">Log</label>
+                </div>
+                <button class="btn btn-sm btn-outline-secondary" onclick="clearLog()">
+                    <i class="fas fa-trash me-1"></i>Clear
+                </button>
+            </div>
         </div>
         <div class="card-body p-0">
             <pre class="mb-0 p-3 text-success small" id="jsonLog" style="max-height: 300px; overflow-y: auto; background: rgba(0,0,0,0.3); font-family: 'Courier New', monospace;">Tekan "Start" untuk memulai diagnostic...</pre>
         </div>
     </div>
-
-    <style>
-        .sensor-indicator {
-            width: 80px;
-            height: 80px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: rgba(108, 117, 125, 0.2);
-            border: 2px solid rgba(108, 117, 125, 0.4);
-            color: #6c757d;
-            transition: all 0.3s ease;
-            margin: 0 auto;
-        }
-        .sensor-indicator.safe {
-            background: rgba(25, 135, 84, 0.15);
-            border-color: rgba(25, 135, 84, 0.6);
-            color: #198754;
-            box-shadow: 0 0 15px rgba(25, 135, 84, 0.3);
-        }
-        .sensor-indicator.danger {
-            background: rgba(220, 53, 69, 0.2);
-            border-color: rgba(220, 53, 69, 0.7);
-            color: #dc3545;
-            box-shadow: 0 0 20px rgba(220, 53, 69, 0.4);
-            animation: pulse-danger 1s ease infinite;
-        }
-        @keyframes pulse-danger {
-            0%, 100% { box-shadow: 0 0 15px rgba(220, 53, 69, 0.3); }
-            50% { box-shadow: 0 0 25px rgba(220, 53, 69, 0.6); }
-        }
-    </style>
 
     <script>
         const API_BASE_URL = "/v1/vacuum";
@@ -338,12 +311,13 @@
         let pollingActive = false;
         let pollTimer = null;
         let logLines = [];
+        let logEnabled = true;
         const MAX_LOG_LINES = 50;
 
         // ===== ESP32 Discovery =====
         async function discoverEsp32() {
             try {
-                const res = await $.get(`${API_BASE_URL}/device`);
+                const res = await fetch(`${API_BASE_URL}/device`).then(r => r.json());
                 if (res.success && res.data) {
                     esp32Ip = res.data.ip_address;
                     updateConnection(true);
@@ -423,21 +397,21 @@
             if (!pollingActive || !esp32Ip) return;
 
             try {
-                const res = await $.ajax({
-                    url: `http://${esp32Ip}/diagnostic`,
-                    type: 'GET',
-                    timeout: 2000
-                });
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 2000);
+                const res = await fetch(`http://${esp32Ip}/diagnostic`, {
+                    signal: controller.signal
+                }).then(r => r.json());
+                clearTimeout(timeoutId);
 
                 if (res.success) {
                     updateSensorUI(res);
                     updateStatusBar(res);
-                    // Load timing settings on first successful poll
                     if (res.timing && !timingLoaded) {
                         populateTimingFields(res.timing);
                         timingLoaded = true;
                     }
-                    addLog(JSON.stringify(res));
+                    if (logEnabled) addLog(JSON.stringify(res));
                 }
             } catch (err) {
                 addLog('ERROR: Gagal mengambil data dari ESP32');
@@ -547,21 +521,21 @@
             const settings = {};
             timingKeys.forEach(key => {
                 const el = document.getElementById(`t_${key}`);
-                if (el && el.value) {
-                    settings[key] = parseInt(el.value);
-                }
+                if (el && el.value) settings[key] = parseInt(el.value);
             });
 
             try {
-                const res = await $.ajax({
-                    url: `http://${esp32Ip}/settings`,
-                    type: 'POST',
-                    contentType: 'application/json',
-                    data: JSON.stringify(settings),
-                    timeout: 3000
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 3000);
+                await fetch(`http://${esp32Ip}/settings`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(settings),
+                    signal: controller.signal
                 });
+                clearTimeout(timeoutId);
                 addLog('Settings SAVED: ' + JSON.stringify(settings));
-                timingLoaded = false; // Reload on next poll
+                timingLoaded = false;
             } catch (err) {
                 addLog('ERROR: Gagal menyimpan settings');
             }
@@ -574,15 +548,17 @@
             }
 
             try {
-                await $.ajax({
-                    url: `http://${esp32Ip}/settings`,
-                    type: 'POST',
-                    contentType: 'application/json',
-                    data: JSON.stringify({ resetDefaults: true }),
-                    timeout: 3000
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 3000);
+                await fetch(`http://${esp32Ip}/settings`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ resetDefaults: true }),
+                    signal: controller.signal
                 });
+                clearTimeout(timeoutId);
                 addLog('Settings RESET to defaults');
-                timingLoaded = false; // Reload on next poll
+                timingLoaded = false;
             } catch (err) {
                 addLog('ERROR: Gagal reset settings');
             }

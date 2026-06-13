@@ -133,6 +133,14 @@ body {
     animation-delay: 0.3s;
 }
 
+.stagger-4 {
+    animation-delay: 0.4s;
+}
+
+.stagger-5 {
+    animation-delay: 0.5s;
+}
+
 /* Navbar */
 .navbar-custom {
     background: rgba(15, 23, 42, 0.85);
@@ -164,4 +172,104 @@ body {
     background-color: rgba(255, 255, 255, 0.1);
     border-radius: 1rem;
     overflow: hidden;
+}
+
+/* ===== Command History (main.blade.php) ===== */
+
+/* Desktop table */
+.table-dark { --bs-table-bg: transparent; }
+.table-dark > tbody > tr {
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+    transition: background 0.2s ease;
+}
+.table-dark > tbody > tr:hover { background: rgba(255,255,255,0.03); }
+.table-dark > tbody > tr:last-child { border-bottom: none; }
+
+/* Command badges */
+.cmd-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 12px;
+    border-radius: 8px;
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+}
+.cmd-badge.cmd-start   { background: rgba(16,185,129,0.15); color: #34d399; }
+.cmd-badge.cmd-stop    { background: rgba(239,68,68,0.15);  color: #f87171; }
+.cmd-badge.cmd-return  { background: rgba(245,158,11,0.15); color: #fbbf24; }
+.cmd-badge.cmd-eco     { background: rgba(16,185,129,0.12); color: #6ee7b7; }
+.cmd-badge.cmd-normal  { background: rgba(14,165,233,0.15); color: #7dd3fc; }
+.cmd-badge.cmd-strong  { background: rgba(239,68,68,0.12);  color: #fca5a5; }
+.cmd-badge.cmd-battery { background: rgba(251,191,36,0.15); color: #fde68a; }
+.cmd-badge.cmd-default { background: rgba(148,163,184,0.12); color: #cbd5e1; }
+
+/* Status pills */
+.status-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 3px 10px;
+    border-radius: 50rem;
+    font-size: 0.72rem;
+    font-weight: 600;
+}
+.status-pill.status-success { background: rgba(16,185,129,0.15); color: #34d399; }
+.status-pill.status-failed  { background: rgba(239,68,68,0.15);  color: #f87171; }
+.status-pill.status-timeout { background: rgba(245,158,11,0.15); color: #fbbf24; }
+
+/* Source badge */
+.source-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+}
+
+/* Mobile list items */
+.cmd-mobile-item {
+    padding: 14px 16px;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+    transition: background 0.2s ease;
+}
+.cmd-mobile-item:last-child { border-bottom: none; }
+.cmd-mobile-item:active { background: rgba(255,255,255,0.03); }
+
+/* Refresh spin animation */
+.spin { animation: spin 0.8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ===== Sensor Diagnostic (diagnostic.blade.php) ===== */
+.sensor-indicator {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(108, 117, 125, 0.2);
+    border: 2px solid rgba(108, 117, 125, 0.4);
+    color: #6c757d;
+    transition: all 0.3s ease;
+    margin: 0 auto;
+}
+.sensor-indicator.safe {
+    background: rgba(25, 135, 84, 0.15);
+    border-color: rgba(25, 135, 84, 0.6);
+    color: #198754;
+    box-shadow: 0 0 15px rgba(25, 135, 84, 0.3);
+}
+.sensor-indicator.danger {
+    background: rgba(220, 53, 69, 0.2);
+    border-color: rgba(220, 53, 69, 0.7);
+    color: #dc3545;
+    box-shadow: 0 0 20px rgba(220, 53, 69, 0.4);
+    animation: pulse-danger 1s ease infinite;
+}
+@keyframes pulse-danger {
+    0%, 100% { box-shadow: 0 0 15px rgba(220, 53, 69, 0.3); }
+    50% { box-shadow: 0 0 25px rgba(220, 53, 69, 0.6); }
 }
