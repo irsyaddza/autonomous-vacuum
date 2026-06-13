@@ -53,7 +53,7 @@
 
 // ===== DIRECT HTTP SERVER CONFIG =====
 #define ESP32_HTTP_PORT     80      // Port for receiving direct commands from browser
-#define FIRMWARE_VERSION    "2.1.4" // Firmware version for device registration
+#define FIRMWARE_VERSION    "2.1.5" // Firmware version for device registration
 
 // ===== MOTOR SETTINGS =====
 #define VACUUM_POWER_NORMAL 200     // Default PWM untuk vacuum NORMAL mode (0-255)
@@ -78,7 +78,7 @@
 #define SPIRAL_TURN_DURATION    3400     // ms - durasi belok 90° saat spiral
 
 // Re-spiral trigger
-#define RESPIRAL_IDLE_TIME      20000    // ms - durasi tanpa obstacle di open area sebelum re-trigger spiral
+#define RESPIRAL_IDLE_TIME      30000    // ms - durasi tanpa obstacle di open area sebelum re-trigger spiral
 
 // Stuck detection
 #define STUCK_OBSTACLE_COUNT    3       // Jumlah obstacle berturut-turut sebelum escape
