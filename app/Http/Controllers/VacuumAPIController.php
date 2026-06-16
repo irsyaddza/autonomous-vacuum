@@ -31,6 +31,10 @@ class VacuumAPIController extends Controller
                 'estimated_time' => $validated['estimated_time'] ?? null
             ]);
 
+            // Auto-cleanup: hapus battery logs lebih dari 24 jam
+            // Mencegah table bloat (sebelumnya ~2880 row/hari)
+            BatteryLog::where('created_at', '<', now()->subHours(24))->delete();
+
             return response()->json([
                 'success' => true,
                 'message' => 'Battery data received',
