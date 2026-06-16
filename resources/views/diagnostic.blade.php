@@ -2,15 +2,15 @@
     <!-- Header -->
     <div class="d-flex align-items-center justify-content-between mb-4 stagger-1">
         <div>
-            <h1 class="h2 mb-1 fw-bold text-white"><i class="fas fa-stethoscope me-2"></i>Sensor Diagnostic</h1>
-            <p class="text-secondary mb-0">Real-time sensor monitoring for debugging.</p>
+            <p class="text-secondary mb-1 small fw-medium tracking-wide text-uppercase" style="font-size: 0.72rem; color: var(--accent);">Live monitoring</p>
+            <h1 class="h2 mb-0 fw-bold" style="letter-spacing: -0.025em;">Sensor diagnostic</h1>
         </div>
         <div class="d-flex align-items-center gap-3">
-            <span class="badge bg-dark border border-secondary" id="connectionBadge">
-                <i class="fas fa-circle text-danger me-1" id="connectionDot"></i>
-                <span id="connectionText">Disconnected</span>
+            <span class="badge rounded-pill px-3 py-2" style="background: var(--card-bg); border: 1px solid var(--surface-border); font-weight: 500; font-size: 0.78rem;" id="connectionBadge">
+                <i class="fas fa-circle me-1" style="font-size: 0.5rem; color: var(--danger);" id="connectionDot"></i>
+                <span id="connectionText" class="fw-medium">Disconnected</span>
             </span>
-            <button class="btn btn-sm btn-outline-light" id="toggleBtn" onclick="togglePolling()">
+            <button class="btn btn-sm btn-outline-light" id="toggleBtn" onclick="togglePolling()" style="border-radius: 8px; font-weight: 500;">
                 <i class="fas fa-play me-1" id="toggleIcon"></i>
                 <span id="toggleText">Start</span>
             </button>
@@ -19,11 +19,11 @@
 
     <!-- ESP32 Quick Links -->
     <div class="d-flex flex-wrap gap-2 mb-4 stagger-1">
-        <button class="btn btn-sm btn-outline-info" onclick="openEsp32Page('/firmware')" id="btnFirmware" disabled>
-            <i class="fas fa-upload me-1"></i>Firmware Upload
+        <button class="btn btn-sm btn-outline-info" onclick="openEsp32Page('/firmware')" id="btnFirmware" disabled style="border-radius: 8px; font-weight: 500;">
+            <i class="fas fa-upload me-1"></i>Firmware upload
         </button>
-        <button class="btn btn-sm btn-outline-warning" onclick="openEsp32Page('/power')" id="btnPower" disabled>
-            <i class="fas fa-battery-half me-1"></i>Battery Diagnostic
+        <button class="btn btn-sm btn-outline-warning" onclick="openEsp32Page('/power')" id="btnPower" disabled style="border-radius: 8px; font-weight: 500;">
+            <i class="fas fa-battery-half me-1"></i>Battery diagnostic
         </button>
     </div>
 
@@ -32,20 +32,20 @@
         <div class="card-body py-3">
             <div class="row text-center">
                 <div class="col-md-3 col-6 mb-2 mb-md-0">
-                    <small class="text-secondary d-block">State</small>
-                    <span class="fw-bold text-white" id="robotState">—</span>
+                    <small class="text-secondary d-block fw-medium" style="font-size: 0.7rem; letter-spacing: 0.06em; text-transform: uppercase;">State</small>
+                    <span class="fw-semibold text-white" id="robotState" style="font-size: 0.95rem;">—</span>
                 </div>
                 <div class="col-md-3 col-6 mb-2 mb-md-0">
-                    <small class="text-secondary d-block">Direction</small>
-                    <span class="fw-bold text-white" id="robotDirection">—</span>
+                    <small class="text-secondary d-block fw-medium" style="font-size: 0.7rem; letter-spacing: 0.06em; text-transform: uppercase;">Direction</small>
+                    <span class="fw-semibold text-white" id="robotDirection" style="font-size: 0.95rem;">—</span>
                 </div>
                 <div class="col-md-3 col-6">
-                    <small class="text-secondary d-block">Battery</small>
-                    <span class="fw-bold text-white" id="robotBattery">—</span>
+                    <small class="text-secondary d-block fw-medium" style="font-size: 0.7rem; letter-spacing: 0.06em; text-transform: uppercase;">Battery</small>
+                    <span class="fw-semibold text-white" id="robotBattery" style="font-size: 0.95rem;">—</span>
                 </div>
                 <div class="col-md-3 col-6">
-                    <small class="text-secondary d-block">Uptime</small>
-                    <span class="fw-bold text-white" id="robotUptime">—</span>
+                    <small class="text-secondary d-block fw-medium" style="font-size: 0.7rem; letter-spacing: 0.06em; text-transform: uppercase;">Uptime</small>
+                    <span class="fw-semibold text-white" id="robotUptime" style="font-size: 0.95rem;">—</span>
                 </div>
             </div>
         </div>
@@ -58,8 +58,8 @@
         <div class="col-lg-6">
             <div class="card h-100">
                 <div class="card-header py-3 d-flex align-items-center">
-                    <i class="fas fa-shield-alt me-2 text-warning"></i>
-                    <h6 class="m-0 fw-bold text-white">Obstacle Avoidance (IR1, IR2, IR3)</h6>
+                    <i class="fas fa-shield-alt me-2" style="color: var(--warning);"></i>
+                    <h6 class="m-0 fw-semibold text-white" style="font-size: 0.9rem;">Obstacle avoidance (IR1, IR2, IR3)</h6>
                 </div>
                 <div class="card-body p-4">
                     <!-- Robot Visual -->
@@ -70,12 +70,12 @@
                                 <div class="sensor-indicator" id="obs-left-indicator">
                                     <i class="fas fa-wifi fa-rotate-270 fa-2x"></i>
                                 </div>
-                                <small class="d-block mt-2 text-secondary">IR1 Left</small>
+                                <small class="d-block mt-2 text-secondary fw-medium">IR1 Left</small>
                                 <div class="mt-1">
-                                    <span class="badge bg-dark border" id="obs-left-raw">RAW: —</span>
+                                    <span class="badge rounded-pill" style="background: var(--card-bg); border: 1px solid var(--surface-border); font-size: 0.72rem;" id="obs-left-raw">RAW: —</span>
                                 </div>
                                 <div class="mt-1">
-                                    <span class="badge bg-dark border" id="obs-left-db">DEB: —</span>
+                                    <span class="badge rounded-pill" style="background: var(--card-bg); border: 1px solid var(--surface-border); font-size: 0.72rem;" id="obs-left-db">DEB: —</span>
                                 </div>
                             </div>
                             <!-- Front Sensor -->
@@ -83,12 +83,12 @@
                                 <div class="sensor-indicator" id="obs-front-indicator">
                                     <i class="fas fa-wifi fa-2x"></i>
                                 </div>
-                                <small class="d-block mt-2 text-secondary">IR2 Front</small>
+                                <small class="d-block mt-2 text-secondary fw-medium">IR2 Front</small>
                                 <div class="mt-1">
-                                    <span class="badge bg-dark border" id="obs-front-raw">RAW: —</span>
+                                    <span class="badge rounded-pill" style="background: var(--card-bg); border: 1px solid var(--surface-border); font-size: 0.72rem;" id="obs-front-raw">RAW: —</span>
                                 </div>
                                 <div class="mt-1">
-                                    <span class="badge bg-dark border" id="obs-front-db">DEB: —</span>
+                                    <span class="badge rounded-pill" style="background: var(--card-bg); border: 1px solid var(--surface-border); font-size: 0.72rem;" id="obs-front-db">DEB: —</span>
                                 </div>
                             </div>
                             <!-- Right Sensor -->
@@ -96,23 +96,23 @@
                                 <div class="sensor-indicator" id="obs-right-indicator">
                                     <i class="fas fa-wifi fa-rotate-90 fa-2x"></i>
                                 </div>
-                                <small class="d-block mt-2 text-secondary">IR3 Right</small>
+                                <small class="d-block mt-2 text-secondary fw-medium">IR3 Right</small>
                                 <div class="mt-1">
-                                    <span class="badge bg-dark border" id="obs-right-raw">RAW: —</span>
+                                    <span class="badge rounded-pill" style="background: var(--card-bg); border: 1px solid var(--surface-border); font-size: 0.72rem;" id="obs-right-raw">RAW: —</span>
                                 </div>
                                 <div class="mt-1">
-                                    <span class="badge bg-dark border" id="obs-right-db">DEB: —</span>
+                                    <span class="badge rounded-pill" style="background: var(--card-bg); border: 1px solid var(--surface-border); font-size: 0.72rem;" id="obs-right-db">DEB: —</span>
                                 </div>
                             </div>
                         </div>
                     </div>
 
                     <!-- Legend -->
-                    <div class="alert alert-dark bg-opacity-25 border-0 mb-0 small">
-                        <i class="fas fa-info-circle me-1 text-info"></i>
-                        <strong>RAW</strong> = Nilai mentah dari pin (0/1). <strong>DEB</strong> = Nilai setelah debounce (true/false).
-                        <br><span class="text-success">● Hijau</span> = Aman (no obstacle).
-                        <span class="text-danger">● Merah</span> = Terdeteksi (obstacle).
+                    <div class="rounded-3 p-3 small" style="background: rgba(255,255,255,0.025); border: 1px solid var(--surface-border);">
+                        <i class="fas fa-info-circle me-1" style="color: var(--accent);"></i>
+                        <strong class="text-white">RAW</strong> = raw pin value (0/1). <strong class="text-white">DEB</strong> = debounced value (true/false).
+                        <br><span style="color: var(--success);">● Green</span> = safe (no obstacle).
+                        <span style="color: var(--danger);">● Red</span> = detected (obstacle).
                     </div>
                 </div>
             </div>
@@ -122,8 +122,8 @@
         <div class="col-lg-6">
             <div class="card h-100">
                 <div class="card-header py-3 d-flex align-items-center">
-                    <i class="fas fa-mountain me-2 text-danger"></i>
-                    <h6 class="m-0 fw-bold text-white">Cliff Detection (IR4, IR5, IR6)</h6>
+                    <i class="fas fa-mountain me-2" style="color: var(--danger);"></i>
+                    <h6 class="m-0 fw-semibold text-white" style="font-size: 0.9rem;">Cliff detection (IR4, IR5, IR6)</h6>
                 </div>
                 <div class="card-body p-4">
                     <!-- Cliff Visual -->
@@ -134,12 +134,12 @@
                                 <div class="sensor-indicator" id="clf-left-indicator">
                                     <i class="fas fa-arrow-down fa-2x"></i>
                                 </div>
-                                <small class="d-block mt-2 text-secondary">IR4 Left</small>
+                                <small class="d-block mt-2 text-secondary fw-medium">IR4 Left</small>
                                 <div class="mt-1">
-                                    <span class="badge bg-dark border" id="clf-left-raw">RAW: —</span>
+                                    <span class="badge rounded-pill" style="background: var(--card-bg); border: 1px solid var(--surface-border); font-size: 0.72rem;" id="clf-left-raw">RAW: —</span>
                                 </div>
                                 <div class="mt-1">
-                                    <span class="badge bg-dark border" id="clf-left-db">DEB: —</span>
+                                    <span class="badge rounded-pill" style="background: var(--card-bg); border: 1px solid var(--surface-border); font-size: 0.72rem;" id="clf-left-db">DEB: —</span>
                                 </div>
                             </div>
                             <!-- Front Cliff -->
@@ -147,12 +147,12 @@
                                 <div class="sensor-indicator" id="clf-front-indicator">
                                     <i class="fas fa-arrow-down fa-2x"></i>
                                 </div>
-                                <small class="d-block mt-2 text-secondary">IR5 Front</small>
+                                <small class="d-block mt-2 text-secondary fw-medium">IR5 Front</small>
                                 <div class="mt-1">
-                                    <span class="badge bg-dark border" id="clf-front-raw">RAW: —</span>
+                                    <span class="badge rounded-pill" style="background: var(--card-bg); border: 1px solid var(--surface-border); font-size: 0.72rem;" id="clf-front-raw">RAW: —</span>
                                 </div>
                                 <div class="mt-1">
-                                    <span class="badge bg-dark border" id="clf-front-db">DEB: —</span>
+                                    <span class="badge rounded-pill" style="background: var(--card-bg); border: 1px solid var(--surface-border); font-size: 0.72rem;" id="clf-front-db">DEB: —</span>
                                 </div>
                             </div>
                             <!-- Right Cliff -->
@@ -160,23 +160,23 @@
                                 <div class="sensor-indicator" id="clf-right-indicator">
                                     <i class="fas fa-arrow-down fa-2x"></i>
                                 </div>
-                                <small class="d-block mt-2 text-secondary">IR6 Right</small>
+                                <small class="d-block mt-2 text-secondary fw-medium">IR6 Right</small>
                                 <div class="mt-1">
-                                    <span class="badge bg-dark border" id="clf-right-raw">RAW: —</span>
+                                    <span class="badge rounded-pill" style="background: var(--card-bg); border: 1px solid var(--surface-border); font-size: 0.72rem;" id="clf-right-raw">RAW: —</span>
                                 </div>
                                 <div class="mt-1">
-                                    <span class="badge bg-dark border" id="clf-right-db">DEB: —</span>
+                                    <span class="badge rounded-pill" style="background: var(--card-bg); border: 1px solid var(--surface-border); font-size: 0.72rem;" id="clf-right-db">DEB: —</span>
                                 </div>
                             </div>
                         </div>
                     </div>
 
                     <!-- Legend -->
-                    <div class="alert alert-dark bg-opacity-25 border-0 mb-0 small">
-                        <i class="fas fa-info-circle me-1 text-info"></i>
-                        <strong>RAW</strong> = Nilai mentah dari pin (0/1). <strong>DEB</strong> = Nilai setelah debounce (true/false).
-                        <br><span class="text-success">● Hijau</span> = Aman (lantai terdeteksi).
-                        <span class="text-danger">● Merah</span> = Bahaya (jurang/cliff).
+                    <div class="rounded-3 p-3 small" style="background: rgba(255,255,255,0.025); border: 1px solid var(--surface-border);">
+                        <i class="fas fa-info-circle me-1" style="color: var(--accent);"></i>
+                        <strong class="text-white">RAW</strong> = raw pin value (0/1). <strong class="text-white">DEB</strong> = debounced value (true/false).
+                        <br><span style="color: var(--success);">● Green</span> = safe (floor detected).
+                        <span style="color: var(--danger);">● Red</span> = danger (cliff/stairs).
                     </div>
                 </div>
             </div>
@@ -186,16 +186,16 @@
     <!-- Timing Settings Panel -->
     <div class="card mt-4 stagger-4">
         <div class="card-header py-3 d-flex align-items-center justify-content-between">
-            <div>
-                <i class="fas fa-sliders-h me-2 text-info"></i>
-                <span class="fw-bold text-white">Timing Settings</span>
-                <small class="text-secondary ms-2">(Live tuning tanpa flash ulang)</small>
+            <div class="d-flex align-items-center">
+                <i class="fas fa-sliders-h me-2" style="color: var(--accent);"></i>
+                <span class="fw-semibold text-white" style="font-size: 0.9rem;">Timing settings</span>
+                <small class="text-secondary ms-2 fw-medium">(live tuning without reflashing)</small>
             </div>
             <div class="d-flex gap-2">
-                <button class="btn btn-sm btn-outline-secondary" onclick="resetTimingDefaults()">
-                    <i class="fas fa-undo me-1"></i>Reset Default
+                <button class="btn btn-sm btn-outline-secondary" onclick="resetTimingDefaults()" style="border-radius: 8px; font-weight: 500;">
+                    <i class="fas fa-undo me-1"></i>Reset
                 </button>
-                <button class="btn btn-sm btn-primary" onclick="saveTimingSettings()">
+                <button class="btn btn-sm btn-primary" onclick="saveTimingSettings()" style="border-radius: 8px; font-weight: 500; background: var(--accent); border-color: var(--accent); color: var(--bg-dark);">
                     <i class="fas fa-save me-1"></i>Save to ESP32
                 </button>
             </div>
@@ -204,79 +204,79 @@
             <div class="row g-4">
                 <!-- Obstacle Avoidance -->
                 <div class="col-md-4">
-                    <h6 class="text-warning mb-3"><i class="fas fa-shield-alt me-1"></i> Obstacle Avoidance</h6>
+                    <h6 class="fw-semibold mb-3" style="color: var(--warning); font-size: 0.85rem;"><i class="fas fa-shield-alt me-1"></i> Obstacle avoidance</h6>
                     <div class="mb-3">
-                        <label class="form-label small text-secondary">Mundur (ms)</label>
+                        <label class="form-label small text-secondary fw-medium">Backup duration (ms)</label>
                         <input type="number" class="form-control form-control-sm bg-dark text-white border-secondary" id="t_backupDuration" min="100" max="2000" step="50">
                     </div>
                     <div class="mb-3">
-                        <label class="form-label small text-secondary">Belok Min (ms)</label>
+                        <label class="form-label small text-secondary fw-medium">Turn min (ms)</label>
                         <input type="number" class="form-control form-control-sm bg-dark text-white border-secondary" id="t_turnDurationMin" min="100" max="2000" step="50">
                     </div>
                     <div class="mb-3">
-                        <label class="form-label small text-secondary">Belok Max (ms)</label>
+                        <label class="form-label small text-secondary fw-medium">Turn max (ms)</label>
                         <input type="number" class="form-control form-control-sm bg-dark text-white border-secondary" id="t_turnDurationMax" min="200" max="3000" step="50">
                     </div>
                     <div class="mb-3">
-                        <label class="form-label small text-secondary">Belok Kecil (ms)</label>
+                        <label class="form-label small text-secondary fw-medium">Small turn (ms)</label>
                         <input type="number" class="form-control form-control-sm bg-dark text-white border-secondary" id="t_turnDurationSmall" min="50" max="1000" step="50">
                     </div>
                 </div>
                 <!-- Cliff Avoidance -->
                 <div class="col-md-4">
-                    <h6 class="text-danger mb-3"><i class="fas fa-mountain me-1"></i> Cliff Avoidance</h6>
+                    <h6 class="fw-semibold mb-3" style="color: var(--danger); font-size: 0.85rem;"><i class="fas fa-mountain me-1"></i> Cliff avoidance</h6>
                     <div class="mb-3">
-                        <label class="form-label small text-secondary">Mundur Cliff (ms)</label>
+                        <label class="form-label small text-secondary fw-medium">Cliff backup (ms)</label>
                         <input type="number" class="form-control form-control-sm bg-dark text-white border-secondary" id="t_cliffBackupDuration" min="200" max="2000" step="50">
                     </div>
                     <div class="mb-3">
-                        <label class="form-label small text-secondary">Putar 180° (ms)</label>
+                        <label class="form-label small text-secondary fw-medium">180° turn (ms)</label>
                         <input type="number" class="form-control form-control-sm bg-dark text-white border-secondary" id="t_cliffTurnDuration" min="300" max="3000" step="50">
                     </div>
-                    <h6 class="text-primary mb-3 mt-4"><i class="fas fa-exclamation-triangle me-1"></i> Stuck Detection</h6>
+                    <h6 class="fw-semibold mb-3 mt-4" style="color: var(--accent); font-size: 0.85rem;"><i class="fas fa-exclamation-triangle me-1"></i> Stuck detection</h6>
                     <div class="mb-3">
-                        <label class="form-label small text-secondary">Jumlah Obstacle</label>
+                        <label class="form-label small text-secondary fw-medium">Obstacle count threshold</label>
                         <input type="number" class="form-control form-control-sm bg-dark text-white border-secondary" id="t_stuckObstacleCount" min="2" max="10" step="1">
                     </div>
                     <div class="mb-3">
-                        <label class="form-label small text-secondary">Jendela Waktu (ms)</label>
+                        <label class="form-label small text-secondary fw-medium">Time window (ms)</label>
                         <input type="number" class="form-control form-control-sm bg-dark text-white border-secondary" id="t_stuckTimeWindow" min="1000" max="10000" step="500">
                     </div>
                     <div class="mb-3">
-                        <label class="form-label small text-secondary">Escape Turn (ms)</label>
+                        <label class="form-label small text-secondary fw-medium">Escape turn (ms)</label>
                         <input type="number" class="form-control form-control-sm bg-dark text-white border-secondary" id="t_escapeTurnDuration" min="500" max="3000" step="100">
                     </div>
                 </div>
                 <!-- Spiral Pattern -->
                 <div class="col-md-4">
-                    <h6 class="text-success mb-3"><i class="fas fa-sync-alt me-1"></i> Spiral Pattern</h6>
+                    <h6 class="fw-semibold mb-3" style="color: var(--success); font-size: 0.85rem;"><i class="fas fa-sync-alt me-1"></i> Spiral pattern</h6>
                     <div class="mb-3">
-                        <label class="form-label small text-secondary">Durasi Awal (ms)</label>
+                        <label class="form-label small text-secondary fw-medium">Initial duration (ms)</label>
                         <input type="number" class="form-control form-control-sm bg-dark text-white border-secondary" id="t_spiralInitialDuration" min="200" max="2000" step="50">
                     </div>
                     <div class="mb-3">
-                        <label class="form-label small text-secondary">Increment (ms)</label>
+                        <label class="form-label small text-secondary fw-medium">Increment (ms)</label>
                         <input type="number" class="form-control form-control-sm bg-dark text-white border-secondary" id="t_spiralIncrement" min="50" max="500" step="25">
                     </div>
                     <div class="mb-3">
-                        <label class="form-label small text-secondary">Max Durasi (ms)</label>
+                        <label class="form-label small text-secondary fw-medium">Max duration (ms)</label>
                         <input type="number" class="form-control form-control-sm bg-dark text-white border-secondary" id="t_spiralMaxDuration" min="1000" max="10000" step="500">
                     </div>
                     <div class="mb-3">
-                        <label class="form-label small text-secondary">Belok Spiral (ms)</label>
+                        <label class="form-label small text-secondary fw-medium">Spiral turn (ms)</label>
                         <input type="number" class="form-control form-control-sm bg-dark text-white border-secondary" id="t_spiralTurnDuration" min="100" max="1000" step="50">
                     </div>
                     <div class="mb-3">
-                        <label class="form-label small text-secondary">Re-Spiral Idle Time (ms)</label>
+                        <label class="form-label small text-secondary fw-medium">Re-spiral idle time (ms)</label>
                         <input type="number" class="form-control form-control-sm bg-dark text-white border-secondary" id="t_respiralIdleTime" min="5000" max="60000" step="1000">
-                        <small class="text-muted">Durasi tanpa obstacle di open area sebelum re-trigger spiral</small>
+                        <small class="text-muted">Idle duration in open area before re-triggering spiral</small>
                     </div>
                 </div>
             </div>
-            <div class="alert alert-dark bg-opacity-25 border-0 mt-3 mb-0 small">
-                <i class="fas fa-info-circle me-1 text-info"></i>
-                Perubahan langsung berlaku di ESP32 <strong>tanpa flash ulang</strong>. Nilai akan kembali ke default setelah ESP32 di-restart.
-                Klik <strong>Reset Default</strong> untuk mengembalikan semua ke nilai di <code>config.h</code>.
+            <div class="rounded-3 p-3 mt-3 small" style="background: rgba(255,255,255,0.025); border: 1px solid var(--surface-border);">
+                <i class="fas fa-info-circle me-1" style="color: var(--accent);"></i>
+                Changes apply directly to ESP32 <strong class="text-white">without reflashing</strong>. Values reset to default on ESP32 restart.
+                Click <strong class="text-white">Reset</strong> to restore all values from <code>config.h</code>.
             </div>
         </div>
     </div>
@@ -284,28 +284,28 @@
     <!-- Raw JSON Log -->
     <div class="card mt-4 stagger-5">
         <div class="card-header py-3 d-flex align-items-center justify-content-between">
-            <div>
-                <i class="fas fa-terminal me-2 text-success"></i>
-                <span class="fw-bold text-white">Raw JSON Log</span>
+            <div class="d-flex align-items-center">
+                <i class="fas fa-terminal me-2" style="color: var(--success);"></i>
+                <span class="fw-semibold text-white" style="font-size: 0.9rem;">Raw JSON log</span>
             </div>
             <div class="d-flex align-items-center gap-3">
                 <div class="form-check form-switch mb-0">
                     <input class="form-check-input" type="checkbox" id="logToggle" checked onchange="logEnabled = this.checked">
-                    <label class="form-check-label small text-secondary" for="logToggle">Log</label>
+                    <label class="form-check-label small text-secondary fw-medium" for="logToggle">Log</label>
                 </div>
-                <button class="btn btn-sm btn-outline-secondary" onclick="clearLog()">
+                <button class="btn btn-sm btn-outline-secondary" onclick="clearLog()" style="border-radius: 8px; font-weight: 500;">
                     <i class="fas fa-trash me-1"></i>Clear
                 </button>
             </div>
         </div>
         <div class="card-body p-0">
-            <pre class="mb-0 p-3 text-success small" id="jsonLog" style="max-height: 300px; overflow-y: auto; background: rgba(0,0,0,0.3); font-family: 'Courier New', monospace;">Tekan "Start" untuk memulai diagnostic...</pre>
+            <pre class="mb-0 p-3 small" id="jsonLog" style="max-height: 300px; overflow-y: auto; background: rgba(0,0,0,0.3); font-family: 'JetBrains Mono', 'Fira Code', 'Courier New', monospace; font-size: 0.78rem; color: var(--success); line-height: 1.5; border-radius: 0 0 var(--radius-lg) var(--radius-lg);">Press "Start" to begin diagnostic...</pre>
         </div>
     </div>
 
     <script>
         const API_BASE_URL = "/v1/vacuum";
-        const POLL_INTERVAL = 300; // ms - poll every 300ms for real-time feel
+        const POLL_INTERVAL = 300;
 
         let esp32Ip = null;
         let pollingActive = false;
@@ -337,12 +337,16 @@
             const btnFw = document.getElementById('btnFirmware');
             const btnPw = document.getElementById('btnPower');
             if (connected) {
-                dot.className = 'fas fa-circle text-success me-1';
+                dot.style.color = 'var(--success)';
+                dot.className = 'fas fa-circle me-1';
+                dot.style.fontSize = '0.5rem';
                 text.textContent = `Connected (${esp32Ip})`;
                 btnFw.disabled = false;
                 btnPw.disabled = false;
             } else {
-                dot.className = 'fas fa-circle text-danger me-1';
+                dot.style.color = 'var(--danger)';
+                dot.className = 'fas fa-circle me-1';
+                dot.style.fontSize = '0.5rem';
                 text.textContent = 'Disconnected';
                 btnFw.disabled = true;
                 btnPw.disabled = true;
@@ -351,7 +355,7 @@
 
         function openEsp32Page(path) {
             if (!esp32Ip) {
-                addLog('ERROR: ESP32 tidak terhubung. Discovery dulu.');
+                addLog('ERROR: ESP32 not connected. Run discovery first.');
                 return;
             }
             window.open(`http://${esp32Ip}${path}`, '_blank');
@@ -370,7 +374,7 @@
             if (!esp32Ip) {
                 const found = await discoverEsp32();
                 if (!found) {
-                    addLog('ERROR: ESP32 tidak ditemukan. Pastikan robot terhubung ke WiFi.');
+                    addLog('ERROR: ESP32 not found. Make sure the robot is connected to WiFi.');
                     return;
                 }
             }
@@ -414,7 +418,7 @@
                     if (logEnabled) addLog(JSON.stringify(res));
                 }
             } catch (err) {
-                addLog('ERROR: Gagal mengambil data dari ESP32');
+                addLog('ERROR: Failed to fetch data from ESP32');
                 updateConnection(false);
             }
 
@@ -425,12 +429,10 @@
 
         // ===== Update Sensor UI =====
         function updateSensorUI(data) {
-            // Obstacle sensors
             updateSensorCard('obs-left', data.obstacle_raw.left, data.obstacle_debounced.left, 'obstacle');
             updateSensorCard('obs-front', data.obstacle_raw.front, data.obstacle_debounced.front, 'obstacle');
             updateSensorCard('obs-right', data.obstacle_raw.right, data.obstacle_debounced.right, 'obstacle');
 
-            // Cliff sensors
             updateSensorCard('clf-left', data.cliff_raw.left, data.cliff_debounced.left, 'cliff');
             updateSensorCard('clf-front', data.cliff_raw.front, data.cliff_debounced.front, 'cliff');
             updateSensorCard('clf-right', data.cliff_raw.right, data.cliff_debounced.right, 'cliff');
@@ -441,17 +443,18 @@
             const rawBadge = document.getElementById(`${prefix}-raw`);
             const dbBadge = document.getElementById(`${prefix}-db`);
 
-            // Display raw value
             rawBadge.textContent = `RAW: ${rawVal}`;
-            rawBadge.className = `badge ${rawVal === 1 ? 'bg-warning text-dark' : 'bg-dark'} border`;
+            rawBadge.className = `badge rounded-pill ${rawVal === 1 ? 'bg-warning text-dark' : ''}`;
+            if (rawVal !== 1) {
+                rawBadge.style.cssText = `background: var(--card-bg); border: 1px solid var(--surface-border); font-size: 0.72rem;`;
+            } else {
+                rawBadge.style.cssText = '';
+            }
 
-            // Display debounced value
             dbBadge.textContent = `DEB: ${debouncedVal ? 'true' : 'false'}`;
-            dbBadge.className = `badge ${debouncedVal ? 'bg-danger' : 'bg-success'} border-0`;
+            dbBadge.className = `badge rounded-pill ${debouncedVal ? 'bg-danger' : 'bg-success'} border-0`;
+            dbBadge.style.cssText = debouncedVal ? '' : '';
 
-            // Update indicator visual
-            // For obstacle: debounced true = danger (obstacle detected)
-            // For cliff: debounced true = danger (cliff detected)
             if (debouncedVal) {
                 indicator.className = 'sensor-indicator danger';
             } else {
@@ -514,7 +517,7 @@
 
         async function saveTimingSettings() {
             if (!esp32Ip) {
-                addLog('ERROR: ESP32 tidak terhubung');
+                addLog('ERROR: ESP32 not connected');
                 return;
             }
 
@@ -537,13 +540,13 @@
                 addLog('Settings SAVED: ' + JSON.stringify(settings));
                 timingLoaded = false;
             } catch (err) {
-                addLog('ERROR: Gagal menyimpan settings');
+                addLog('ERROR: Failed to save settings');
             }
         }
 
         async function resetTimingDefaults() {
             if (!esp32Ip) {
-                addLog('ERROR: ESP32 tidak terhubung');
+                addLog('ERROR: ESP32 not connected');
                 return;
             }
 
@@ -560,7 +563,7 @@
                 addLog('Settings RESET to defaults');
                 timingLoaded = false;
             } catch (err) {
-                addLog('ERROR: Gagal reset settings');
+                addLog('ERROR: Failed to reset settings');
             }
         }
 

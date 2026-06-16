@@ -2,31 +2,39 @@
 <html lang="en" data-bs-theme="dark">
 
 <head>
-
-    <meta name="csrf-token" content="{{ csrf_token() }}">
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <meta name="description" content="Autonomous Vacuum Control Panel">
-    <meta name="author" content="">
+    <meta name="description" content="Monitor and control your autonomous vacuum robot — real-time dashboard, sensor diagnostic, and firmware tuning.">
+    <meta name="author" content="Autonomous Vacuum">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
 
-    <title>Autonomous Vacuum - Control Panel</title>
+    <!-- Open Graph -->
+    <meta property="og:title" content="Autonomous Vacuum — Control Panel">
+    <meta property="og:description" content="Real-time dashboard and control for ESP32-based autonomous vacuum robot.">
+    <meta property="og:type" content="website">
+
+    <title>@yield('title', 'Control Panel') — Autonomous Vacuum</title>
 
     <!-- FontAwesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
-    <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css?family=Nunito:400,400i,600,600i,700,700i,800,800i" rel="stylesheet">
+
+    <!-- Google Fonts: Outfit -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 
     <!-- Bootstrap 5.3 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 
     <!-- Custom Premium Dark Styles -->
     <link href="{{ asset('css/custom-dark.css') }}" rel="stylesheet">
-
 </head>
 
 <body id="page-top">
+
+    <!-- Skip to Content -->
+    <a href="#main-content" class="skip-link">Skip to content</a>
 
     <!-- Main Content Wrapper -->
     <div class="d-flex flex-column min-vh-100">
@@ -35,8 +43,8 @@
         <x-navbar></x-navbar>
 
         <!-- Main Content -->
-        <main class="flex-grow-1 py-4 fade-in">
-            <div class="container">
+        <main id="main-content" class="flex-grow-1 py-4 fade-in">
+            <div class="container" style="max-width: 1320px;">
                 {{$slot}}
             </div>
         </main>
@@ -45,7 +53,6 @@
         <x-footer></x-footer>
 
     </div>
-    <!-- End of Page Wrapper -->
 
     <!-- Scroll to Top Button-->
     <a class="scroll-to-top rounded" href="#page-top" style="display: none;">

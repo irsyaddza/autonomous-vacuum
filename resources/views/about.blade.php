@@ -1,68 +1,75 @@
 <x-master>
     <!-- Header -->
-    <div class="d-flex align-items-center justify-content-between mb-5 stagger-1">
-        <div>
-            <h1 class="h2 mb-1 fw-bold text-white"><i class="fas fa-info-circle me-2"></i>About</h1>
-            <p class="text-secondary mb-0">Tentang sistem Autonomous Vacuum Control Panel.</p>
+    <div class="mb-5 stagger-1">
+        <p class="text-secondary mb-1 small fw-medium tracking-wide text-uppercase" style="font-size: 0.72rem; color: var(--accent);">About the system</p>
+        <h1 class="h2 mb-2 fw-bold" style="letter-spacing: -0.025em;">Autonomous vacuum robot</h1>
+        <p class="text-secondary mb-0" style="max-width: 55ch;">
+            ESP32-powered autonomous vacuum with real-time web dashboard, sensor diagnostic, and live firmware tuning.
+        </p>
+    </div>
+
+    <!-- Hero About Card -->
+    <div class="card mb-5 stagger-2" style="overflow: hidden; position: relative;">
+        <div class="card-body p-5 position-relative" style="z-index: 1;">
+            <div class="row align-items-center g-5">
+                <div class="col-md-3 text-center">
+                    <div class="d-inline-flex align-items-center justify-content-center rounded-3" style="width: 96px; height: 96px; background: var(--accent-dim); border: 1px solid rgba(34, 211, 238, 0.15);">
+                        <i class="fas fa-robot fa-2x" style="color: var(--accent);"></i>
+                    </div>
+                </div>
+                <div class="col-md-9">
+                    <h3 class="fw-bold mb-2" style="letter-spacing: -0.02em;">Control panel for your robot</h3>
+                    <p class="text-secondary mb-0 lead fw-medium" style="font-size: 1.05rem; max-width: 60ch;">
+                        Monitor sensors, control movement, adjust suction power, and tune cleaning parameters — all from a single web interface.
+                    </p>
+                </div>
+            </div>
         </div>
     </div>
 
-    <!-- Main About Card -->
-    <div class="card mb-4 stagger-2">
-        <div class="card-body p-5">
-            <div class="row align-items-center g-4">
-                <div class="col-md-2 text-center">
-                    <div class="bg-primary bg-opacity-10 p-4 rounded-circle d-inline-block">
-                        <i class="fas fa-robot fa-3x text-primary"></i>
+    <!-- Features: 2-column asymmetric -->
+    <div class="row g-4 mb-5 stagger-3">
+        <!-- Large feature card -->
+        <div class="col-md-7">
+            <div class="card h-100">
+                <div class="card-body p-5">
+                    <div class="d-flex align-items-center mb-4">
+                        <div class="d-inline-flex align-items-center justify-content-center rounded-3 me-3" style="width: 44px; height: 44px; background: var(--accent-dim);">
+                            <i class="fas fa-gamepad fa-lg" style="color: var(--accent);"></i>
+                        </div>
+                        <h5 class="fw-bold mb-0" style="letter-spacing: -0.01em;">Robot control</h5>
                     </div>
-                </div>
-                <div class="col-md-10">
-                    <h3 class="fw-bold text-white mb-2">Autonomous Vacuum Robot</h3>
-                    <p class="text-secondary mb-0 lead">
-                        Sistem kontrol dan monitoring robot vacuum otonom berbasis ESP32 dengan antarmuka web.
+                    <p class="text-secondary mb-0 small" style="max-width: 50ch;">
+                        Start and stop the robot, switch between eco, normal, and strong suction modes. All commands are sent directly to the ESP32 over HTTP for minimal latency.
                     </p>
                 </div>
             </div>
         </div>
-    </div>
-
-    <!-- Features -->
-    <div class="row g-4 mb-4 stagger-3">
-        <div class="col-md-4">
-            <div class="card h-100">
-                <div class="card-body p-4 text-center">
-                    <div class="bg-info bg-opacity-10 p-3 rounded-circle d-inline-block mb-3">
-                        <i class="fas fa-gamepad fa-2x text-info"></i>
+        <!-- Smaller stacked cards -->
+        <div class="col-md-5 d-flex flex-column gap-4">
+            <div class="card flex-grow-1">
+                <div class="card-body p-4">
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="d-inline-flex align-items-center justify-content-center rounded-3 me-3" style="width: 40px; height: 40px; background: rgba(251, 191, 36, 0.1);">
+                            <i class="fas fa-stethoscope" style="color: var(--warning);"></i>
+                        </div>
+                        <h6 class="fw-bold mb-0">Sensor diagnostic</h6>
                     </div>
-                    <h5 class="fw-bold text-white mb-2">Kontrol Robot</h5>
-                    <p class="text-secondary small mb-0">
-                        Atur kecepatan motor, arah pergerakan, dan mode pembersihan langsung dari dashboard.
+                    <p class="text-secondary mb-0 small">
+                        Live IR sensor monitoring with debounce values. Tune timing parameters without reflashing firmware.
                     </p>
                 </div>
             </div>
-        </div>
-        <div class="col-md-4">
-            <div class="card h-100">
-                <div class="card-body p-4 text-center">
-                    <div class="bg-warning bg-opacity-10 p-3 rounded-circle d-inline-block mb-3">
-                        <i class="fas fa-stethoscope fa-2x text-warning"></i>
+            <div class="card flex-grow-1">
+                <div class="card-body p-4">
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="d-inline-flex align-items-center justify-content-center rounded-3 me-3" style="width: 40px; height: 40px; background: rgba(52, 211, 153, 0.1);">
+                            <i class="fas fa-battery-three-quarters" style="color: var(--success);"></i>
+                        </div>
+                        <h6 class="fw-bold mb-0">Battery monitoring</h6>
                     </div>
-                    <h5 class="fw-bold text-white mb-2">Sensor Diagnostic</h5>
-                    <p class="text-secondary small mb-0">
-                        Monitor semua sensor IR (obstacle & cliff) secara real-time. Tuning parameter timing algoritma cleaning tanpa perlu flash ulang firmware.
-                    </p>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-4">
-            <div class="card h-100">
-                <div class="card-body p-4 text-center">
-                    <div class="bg-success bg-opacity-10 p-3 rounded-circle d-inline-block mb-3">
-                        <i class="fas fa-battery-three-quarters fa-2x text-success"></i>
-                    </div>
-                    <h5 class="fw-bold text-white mb-2">Battery Monitoring</h5>
-                    <p class="text-secondary small mb-0">
-                        Pantau tegangan dan persentase baterai secara berkala. Sistem otomatis memperingatkan dan menghentikan robot saat baterai rendah.
+                    <p class="text-secondary mb-0 small">
+                        Track voltage and percentage in real time. Auto-stop protection when battery depletes.
                     </p>
                 </div>
             </div>
@@ -70,44 +77,44 @@
     </div>
 
     <!-- How it works -->
-    <div class="card mb-4 stagger-4">
-        <div class="card-header py-3">
-            <i class="fas fa-cogs me-2 text-info"></i>
-            <span class="fw-bold text-white">Cara Kerja</span>
+    <div class="card mb-5 stagger-4">
+        <div class="card-header py-3 d-flex align-items-center">
+            <i class="fas fa-cogs me-2" style="color: var(--accent);"></i>
+            <span class="fw-semibold text-white" style="font-size: 0.9rem;">How it works</span>
         </div>
-        <div class="card-body p-4">
-            <div class="row g-4">
+        <div class="card-body p-5">
+            <div class="row g-5">
                 <div class="col-md-6">
-                    <h6 class="text-info mb-3"><i class="fas fa-microchip me-2"></i>Arsitektur Sistem</h6>
+                    <h6 class="fw-semibold mb-3" style="color: var(--accent);"><i class="fas fa-microchip me-2"></i>System architecture</h6>
                     <ul class="list-unstyled text-secondary small">
-                        <li class="mb-2">
-                            <i class="fas fa-check text-success me-2"></i>
-                            <strong class="text-white">ESP32</strong> sebagai otak robot — menjalankan firmware, membaca sensor, mengontrol motor, dan menjalankan algoritma cleaning.
+                        <li class="mb-3 d-flex align-items-start">
+                            <i class="fas fa-check me-3 mt-1" style="color: var(--success); font-size: 0.7rem;"></i>
+                            <span><strong class="text-white">ESP32</strong> — runs the firmware, reads sensors, controls motors, and executes the cleaning algorithm.</span>
                         </li>
-                        <li class="mb-2">
-                            <i class="fas fa-check text-success me-2"></i>
-                            <strong class="text-white">Laravel</strong> sebagai backend — menyimpan log baterai, riwayat perintah, dan menyediakan REST API.
+                        <li class="mb-3 d-flex align-items-start">
+                            <i class="fas fa-check me-3 mt-1" style="color: var(--success); font-size: 0.7rem;"></i>
+                            <span><strong class="text-white">Laravel</strong> — backend API that stores battery logs, command history, and manages device registration.</span>
                         </li>
-                        <li class="mb-2">
-                            <i class="fas fa-check text-success me-2"></i>
-                            <strong class="text-white">Browser</strong> sebagai frontend — dashboard kontrol, diagnostic live, dan tuning parameter via HTTP langsung ke ESP32.
+                        <li class="d-flex align-items-start">
+                            <i class="fas fa-check me-3 mt-1" style="color: var(--success); font-size: 0.7rem;"></i>
+                            <span><strong class="text-white">Browser</strong> — dashboard for control, live diagnostic, and parameter tuning via direct HTTP to ESP32.</span>
                         </li>
                     </ul>
                 </div>
                 <div class="col-md-6">
-                    <h6 class="text-info mb-3"><i class="fas fa-broom me-2"></i>Algoritma Cleaning</h6>
+                    <h6 class="fw-semibold mb-3" style="color: var(--accent);"><i class="fas fa-broom me-2"></i>Cleaning algorithm</h6>
                     <ul class="list-unstyled text-secondary small">
-                        <li class="mb-2">
-                            <i class="fas fa-sync-alt text-warning me-2"></i>
-                            <strong class="text-white">Spiral Expanding</strong> — robot bergerak spiral dari titik awal untuk membersihkan area secara merata.
+                        <li class="mb-3 d-flex align-items-start">
+                            <i class="fas fa-sync-alt me-3 mt-1" style="color: var(--warning); font-size: 0.7rem;"></i>
+                            <span><strong class="text-white">Spiral expanding</strong> — robot moves in an expanding spiral from the start point to cover open areas evenly.</span>
                         </li>
-                        <li class="mb-2">
-                            <i class="fas fa-random text-warning me-2"></i>
-                            <strong class="text-white">Random Bounce</strong> — setelah spiral selesai, robot berjalan lurus dan belok acak saat menabrak obstacle.
+                        <li class="mb-3 d-flex align-items-start">
+                            <i class="fas fa-random me-3 mt-1" style="color: var(--warning); font-size: 0.7rem;"></i>
+                            <span><strong class="text-white">Random bounce</strong> — after spiral completes, the robot drives straight and turns randomly on obstacle hits.</span>
                         </li>
-                        <li class="mb-2">
-                            <i class="fas fa-shield-alt text-danger me-2"></i>
-                            <strong class="text-white">Cliff Protection</strong> — sensor cliff menghentikan robot segera jika terdeteksi jurang/tangga.
+                        <li class="d-flex align-items-start">
+                            <i class="fas fa-shield-alt me-3 mt-1" style="color: var(--danger); font-size: 0.7rem;"></i>
+                            <span><strong class="text-white">Cliff protection</strong> — cliff sensors halt the robot immediately if a drop or staircase is detected.</span>
                         </li>
                     </ul>
                 </div>
@@ -116,84 +123,79 @@
     </div>
 
     <!-- Tech Stack -->
-    <div class="card stagger-5">
-        <div class="card-header py-3">
-            <i class="fas fa-layer-group me-2 text-success"></i>
-            <span class="fw-bold text-white">Tech Stack</span>
-        </div>
+    <div class="stagger-5">
+        <p class="text-secondary mb-3 small fw-medium tracking-wide text-uppercase" style="font-size: 0.68rem; letter-spacing: 0.1em;">Built with</p>
         <style>
             .tech-card {
-                transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+                transition: border-color 0.3s ease, box-shadow 0.3s ease;
             }
             .tech-card:hover {
-                transform: translateY(-4px);
-                box-shadow: 0 8px 20px -6px rgba(0, 0, 0, 0.5);
-                border-color: rgba(255, 255, 255, 0.15) !important;
+                border-color: rgba(255, 255, 255, 0.12) !important;
+                box-shadow: var(--shadow-md);
             }
             .tech-logo-container {
-                width: 48px;
-                height: 48px;
+                width: 44px;
+                height: 44px;
                 display: flex;
                 align-items: center;
                 justify-content: center;
-                border-radius: 12px;
+                border-radius: 10px;
                 background: #ffffff;
-                padding: 8px;
-                box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+                padding: 7px;
+                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+                flex-shrink: 0;
                 transition: transform 0.3s ease;
             }
             .tech-card:hover .tech-logo-container {
-                transform: scale(1.08) rotate(3deg);
+                transform: scale(1.06) rotate(2deg);
             }
         </style>
-        <div class="card-body p-4">
-            <div class="row row-cols-1 row-cols-sm-2 row-cols-lg-4 g-3">
-                <!-- ESP32 -->
-                <div class="col">
-                    <div class="d-flex align-items-center p-3 rounded-3 tech-card" style="background: rgba(14, 165, 233, 0.08); border: 1px solid rgba(14, 165, 233, 0.2); height: 100%;">
-                        <div class="tech-logo-container me-3 flex-shrink-0">
-                            <img src="{{ asset('espressif.png') }}" alt="ESP32" style="max-width: 100%; max-height: 100%; object-fit: contain;">
-                        </div>
-                        <div>
-                            <div class="fw-bold text-white small mb-0">ESP32</div>
-                            <span class="text-secondary" style="font-size: 0.75rem;">Microcontroller</span>
-                        </div>
+        <div class="row row-cols-1 row-cols-sm-2 row-cols-lg-4 g-3">
+            <!-- ESP32 -->
+            <div class="col">
+                <div class="d-flex align-items-center p-3 rounded-3 tech-card h-100" style="background: rgba(34, 211, 238, 0.06); border: 1px solid rgba(34, 211, 238, 0.12);">
+                    <div class="tech-logo-container me-3">
+                        <img src="{{ asset('espressif.png') }}" alt="ESP32 microcontroller logo" style="max-width: 100%; max-height: 100%; object-fit: contain;">
+                    </div>
+                    <div>
+                        <div class="fw-semibold text-white small mb-0">ESP32</div>
+                        <span class="text-secondary" style="font-size: 0.72rem;">Microcontroller</span>
                     </div>
                 </div>
-                <!-- Laravel 12 -->
-                <div class="col">
-                    <div class="d-flex align-items-center p-3 rounded-3 tech-card" style="background: rgba(239, 68, 68, 0.08); border: 1px solid rgba(239, 68, 68, 0.2); height: 100%;">
-                        <div class="tech-logo-container me-3 flex-shrink-0">
-                            <img src="{{ asset('laravel.png') }}" alt="Laravel 12" style="max-width: 100%; max-height: 100%; object-fit: contain;">
-                        </div>
-                        <div>
-                            <div class="fw-bold text-white small mb-0">Laravel 12</div>
-                            <span class="text-secondary" style="font-size: 0.75rem;">Backend Framework</span>
-                        </div>
+            </div>
+            <!-- Laravel 12 -->
+            <div class="col">
+                <div class="d-flex align-items-center p-3 rounded-3 tech-card h-100" style="background: rgba(239, 68, 68, 0.06); border: 1px solid rgba(239, 68, 68, 0.12);">
+                    <div class="tech-logo-container me-3">
+                        <img src="{{ asset('laravel.png') }}" alt="Laravel 12 framework logo" style="max-width: 100%; max-height: 100%; object-fit: contain;">
+                    </div>
+                    <div>
+                        <div class="fw-semibold text-white small mb-0">Laravel 12</div>
+                        <span class="text-secondary" style="font-size: 0.72rem;">Backend framework</span>
                     </div>
                 </div>
-                <!-- Bootstrap 5 -->
-                <div class="col">
-                    <div class="d-flex align-items-center p-3 rounded-3 tech-card" style="background: rgba(13, 202, 240, 0.08); border: 1px solid rgba(13, 202, 240, 0.2); height: 100%;">
-                        <div class="tech-logo-container me-3 flex-shrink-0">
-                            <img src="{{ asset('bootstrap.png') }}" alt="Bootstrap 5" style="max-width: 100%; max-height: 100%; object-fit: contain;">
-                        </div>
-                        <div>
-                            <div class="fw-bold text-white small mb-0">Bootstrap 5</div>
-                            <span class="text-secondary" style="font-size: 0.75rem;">CSS Framework</span>
-                        </div>
+            </div>
+            <!-- Bootstrap 5 -->
+            <div class="col">
+                <div class="d-flex align-items-center p-3 rounded-3 tech-card h-100" style="background: rgba(13, 202, 240, 0.06); border: 1px solid rgba(13, 202, 240, 0.12);">
+                    <div class="tech-logo-container me-3">
+                        <img src="{{ asset('bootstrap.png') }}" alt="Bootstrap 5 CSS framework logo" style="max-width: 100%; max-height: 100%; object-fit: contain;">
+                    </div>
+                    <div>
+                        <div class="fw-semibold text-white small mb-0">Bootstrap 5</div>
+                        <span class="text-secondary" style="font-size: 0.72rem;">CSS framework</span>
                     </div>
                 </div>
-                <!-- MySQL -->
-                <div class="col">
-                    <div class="d-flex align-items-center p-3 rounded-3 tech-card" style="background: rgba(25, 135, 84, 0.08); border: 1px solid rgba(25, 135, 84, 0.2); height: 100%;">
-                        <div class="tech-logo-container me-3 flex-shrink-0">
-                            <img src="{{ asset('mysql.png') }}" alt="MySQL" style="max-width: 100%; max-height: 100%; object-fit: contain;">
-                        </div>
-                        <div>
-                            <div class="fw-bold text-white small mb-0">MySQL</div>
-                            <span class="text-secondary" style="font-size: 0.75rem;">Database</span>
-                        </div>
+            </div>
+            <!-- MySQL -->
+            <div class="col">
+                <div class="d-flex align-items-center p-3 rounded-3 tech-card h-100" style="background: rgba(25, 135, 84, 0.06); border: 1px solid rgba(25, 135, 84, 0.12);">
+                    <div class="tech-logo-container me-3">
+                        <img src="{{ asset('mysql.png') }}" alt="MySQL database logo" style="max-width: 100%; max-height: 100%; object-fit: contain;">
+                    </div>
+                    <div>
+                        <div class="fw-semibold text-white small mb-0">MySQL</div>
+                        <span class="text-secondary" style="font-size: 0.72rem;">Database</span>
                     </div>
                 </div>
             </div>
