@@ -28,8 +28,8 @@
             <div class="card h-100">
                 <div class="card-body p-4">
                     <div class="d-flex align-items-center mb-3">
-                        <div class="bg-primary bg-opacity-10 p-3 rounded-circle text-primary me-3">
-                            <i class="fas fa-robot fa-lg"></i>
+                        <div class="d-flex align-items-center justify-content-center bg-primary bg-opacity-10 rounded-circle me-3" style="width: 50px; height: 50px; flex-shrink: 0; border: 1px solid rgba(14, 165, 233, 0.2); box-shadow: 0 0 10px rgba(14, 165, 233, 0.15);">
+                            <img src="{{ asset('robot.png') }}" alt="Robot" style="width: 28px; height: 28px; object-fit: contain; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));">
                         </div>
                         <div>
                             <h6 class="text-uppercase text-secondary fw-bold mb-1" style="font-size: 0.75rem; letter-spacing: 1px;">Robot Status</h6>
@@ -51,7 +51,7 @@
                     <div class="d-flex align-items-center justify-content-between mb-3">
                         <div class="d-flex align-items-center">
                             <div class="bg-success bg-opacity-10 p-3 rounded-circle text-success me-3">
-                                <i class="fas fa-battery-three-quarters fa-lg"></i>
+                                <i class="fas fa-battery-three-quarters fa-lg" id="batteryIcon"></i>
                             </div>
                             <div>
                                 <h6 class="text-uppercase text-secondary fw-bold mb-1" style="font-size: 0.75rem; letter-spacing: 1px;">Battery Level</h6>
@@ -473,7 +473,7 @@
             else bar.classList.add('bg-danger');
             
             // Update battery icon based on level
-            const iconEl = document.querySelector('.card .fa-battery-three-quarters');
+            const iconEl = document.getElementById('batteryIcon');
             if (iconEl) {
                 iconEl.className = 'fas fa-lg';
                 if (percent > 75) iconEl.classList.add('fa-battery-full');
@@ -629,8 +629,24 @@
                 .catch(() => icon.classList.remove('spin'));
         }
 
+        // ===== MOBILE CLOCK =====
+        function updateMobileClock() {
+            const now = new Date();
+            const timeEl = document.getElementById('mobile-clock-time');
+            const dateEl = document.getElementById('mobile-clock-date');
+            if (timeEl) {
+                timeEl.textContent = now.toLocaleTimeString('en-US', { hour12: false });
+            }
+            if (dateEl) {
+                dateEl.textContent = now.toLocaleDateString('en-US', { 
+                    weekday: 'long', year: 'numeric', month: 'short', day: 'numeric' 
+                });
+            }
+        }
+
         // ===== INITIALIZATION =====
-        let statusInterval, batteryEventInterval, cmdLogInterval;
+        let statusInterval, batteryEventInterval, cmdLogInterval, clockInterval;
+        let isTabVisible = true;
 
         document.addEventListener('DOMContentLoaded', async () => {
             // 1. Discover ESP32 IP
@@ -649,12 +665,43 @@
             // 5. Fetch command logs & auto-refresh every 15s
             fetchCommandLogs();
             cmdLogInterval = setInterval(fetchCommandLogs, 15000);
+
+            // 6. Mobile clock
+            updateMobileClock();
+            clockInterval = setInterval(updateMobileClock, 1000);
+        });
+
+        // Adaptive polling: reduce when tab is not visible
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden) {
+                // Tab hidden — slow down polling significantly
+                isTabVisible = false;
+                clearInterval(statusInterval);
+                clearInterval(batteryEventInterval);
+                clearInterval(cmdLogInterval);
+                statusInterval = setInterval(fetchFullStatus, 120000);       // 2 min
+                batteryEventInterval = setInterval(fetchBatteryEvents, 60000); // 1 min
+                cmdLogInterval = setInterval(fetchCommandLogs, 60000);        // 1 min
+            } else {
+                // Tab visible again — restore normal polling
+                isTabVisible = true;
+                clearInterval(statusInterval);
+                clearInterval(batteryEventInterval);
+                clearInterval(cmdLogInterval);
+                fetchFullStatus();
+                fetchBatteryEvents();
+                fetchCommandLogs();
+                statusInterval = setInterval(fetchFullStatus, 20000);
+                batteryEventInterval = setInterval(fetchBatteryEvents, 10000);
+                cmdLogInterval = setInterval(fetchCommandLogs, 15000);
+            }
         });
 
         window.addEventListener('beforeunload', () => {
             clearInterval(statusInterval);
             clearInterval(batteryEventInterval);
             clearInterval(cmdLogInterval);
+            clearInterval(clockInterval);
         });
     </script>
 </x-master>

@@ -121,12 +121,81 @@
             <i class="fas fa-layer-group me-2 text-success"></i>
             <span class="fw-bold text-white">Tech Stack</span>
         </div>
+        <style>
+            .tech-card {
+                transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            }
+            .tech-card:hover {
+                transform: translateY(-4px);
+                box-shadow: 0 8px 20px -6px rgba(0, 0, 0, 0.5);
+                border-color: rgba(255, 255, 255, 0.15) !important;
+            }
+            .tech-logo-container {
+                width: 48px;
+                height: 48px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                border-radius: 12px;
+                background: #ffffff;
+                padding: 8px;
+                box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+                transition: transform 0.3s ease;
+            }
+            .tech-card:hover .tech-logo-container {
+                transform: scale(1.08) rotate(3deg);
+            }
+        </style>
         <div class="card-body p-4">
-            <div class="d-flex flex-wrap gap-2">
-                <span class="badge bg-primary bg-opacity-25 text-primary border border-primary border-opacity-25 px-3 py-2">ESP32</span>
-                <span class="badge bg-danger bg-opacity-25 text-danger border border-danger border-opacity-25 px-3 py-2">Laravel 12</span>
-                <span class="badge bg-info bg-opacity-25 text-info border border-info border-opacity-25 px-3 py-2">Bootstrap 5</span>
-                <span class="badge bg-success bg-opacity-25 text-success border border-success border-opacity-25 px-3 py-2">MySQL</span>
+            <div class="row row-cols-1 row-cols-sm-2 row-cols-lg-4 g-3">
+                <!-- ESP32 -->
+                <div class="col">
+                    <div class="d-flex align-items-center p-3 rounded-3 tech-card" style="background: rgba(14, 165, 233, 0.08); border: 1px solid rgba(14, 165, 233, 0.2); height: 100%;">
+                        <div class="tech-logo-container me-3 flex-shrink-0">
+                            <img src="{{ asset('espressif.png') }}" alt="ESP32" style="max-width: 100%; max-height: 100%; object-fit: contain;">
+                        </div>
+                        <div>
+                            <div class="fw-bold text-white small mb-0">ESP32</div>
+                            <span class="text-secondary" style="font-size: 0.75rem;">Microcontroller</span>
+                        </div>
+                    </div>
+                </div>
+                <!-- Laravel 12 -->
+                <div class="col">
+                    <div class="d-flex align-items-center p-3 rounded-3 tech-card" style="background: rgba(239, 68, 68, 0.08); border: 1px solid rgba(239, 68, 68, 0.2); height: 100%;">
+                        <div class="tech-logo-container me-3 flex-shrink-0">
+                            <img src="{{ asset('laravel.png') }}" alt="Laravel 12" style="max-width: 100%; max-height: 100%; object-fit: contain;">
+                        </div>
+                        <div>
+                            <div class="fw-bold text-white small mb-0">Laravel 12</div>
+                            <span class="text-secondary" style="font-size: 0.75rem;">Backend Framework</span>
+                        </div>
+                    </div>
+                </div>
+                <!-- Bootstrap 5 -->
+                <div class="col">
+                    <div class="d-flex align-items-center p-3 rounded-3 tech-card" style="background: rgba(13, 202, 240, 0.08); border: 1px solid rgba(13, 202, 240, 0.2); height: 100%;">
+                        <div class="tech-logo-container me-3 flex-shrink-0">
+                            <img src="{{ asset('bootstrap.png') }}" alt="Bootstrap 5" style="max-width: 100%; max-height: 100%; object-fit: contain;">
+                        </div>
+                        <div>
+                            <div class="fw-bold text-white small mb-0">Bootstrap 5</div>
+                            <span class="text-secondary" style="font-size: 0.75rem;">CSS Framework</span>
+                        </div>
+                    </div>
+                </div>
+                <!-- MySQL -->
+                <div class="col">
+                    <div class="d-flex align-items-center p-3 rounded-3 tech-card" style="background: rgba(25, 135, 84, 0.08); border: 1px solid rgba(25, 135, 84, 0.2); height: 100%;">
+                        <div class="tech-logo-container me-3 flex-shrink-0">
+                            <img src="{{ asset('mysql.png') }}" alt="MySQL" style="max-width: 100%; max-height: 100%; object-fit: contain;">
+                        </div>
+                        <div>
+                            <div class="fw-bold text-white small mb-0">MySQL</div>
+                            <span class="text-secondary" style="font-size: 0.75rem;">Database</span>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
