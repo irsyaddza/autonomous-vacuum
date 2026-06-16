@@ -9,6 +9,7 @@ extern SensorArray sensors;
 extern BatteryMonitor battery;
 #include <WiFiManager.h>
 #include <Update.h>
+#include <esp_wifi.h>
 
 // Global WebServer instance
 WebServer server(ESP32_HTTP_PORT);
@@ -192,7 +193,7 @@ void ApiClient::connectWiFi() {
             if(wrap) {
                 const foot = document.createElement('div');
                 foot.className = 'footer';
-                foot.innerHTML = 'Powered by ESP32 & Laravel<br>ANTIGRAVITY SYSTEM';
+                foot.innerHTML = 'Powered by ESP32 & Laravel';
                 wrap.appendChild(foot);
             }
         });
@@ -244,6 +245,12 @@ void ApiClient::connectWiFi() {
         preferences.putString("api_url", apiBaseUrl);
         Serial.print("Saved API Base URL: ");
         Serial.println(apiBaseUrl);
+        
+        // Enable WiFi Modem Sleep for power saving
+        // Reduces WiFi radio power ~30-50% while still allowing HTTP server to work
+        // The modem wakes automatically at DTIM beacon intervals
+        esp_wifi_set_ps(WIFI_PS_MIN_MODEM);
+        Serial.println("[POWER] WiFi Modem Sleep enabled (power saving mode)");
         
         Serial.println("=============================");
     }
@@ -656,7 +663,7 @@ void ApiClient::_handleFirmwarePage(WebServer* customServer) {
     html += "</form>";
     html += "<div class=\"status-msg\" id=\"statusMsg\"></div>";
     html += "<div class=\"warning-box\">&#x26A0; <strong>Perhatian:</strong> Pastikan file <code>.bin</code> yang diupload benar dan sesuai untuk ESP32. Robot akan <strong>restart otomatis</strong> setelah update berhasil. Jangan cabut daya saat proses berlangsung.</div>";
-    html += "<div class=\"footer\">Powered by ESP32 &amp; Laravel &bull; ANTIGRAVITY SYSTEM</div>";
+    html += "<div class=\"footer\">Powered by ESP32 &amp; Laravel</div>";
     html += "</div>";
     html += "<script>";
     html += "var selectedFile=null;";

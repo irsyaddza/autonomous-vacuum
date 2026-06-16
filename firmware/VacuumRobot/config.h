@@ -48,12 +48,16 @@
 
 // ===== API CONFIG =====
 #define DEFAULT_API_BASE_URL "http://192.168.1.2:8000/v1/vacuum"
-#define API_POLL_INTERVAL   2000    // ms - polling status dari server (fallback only)
-#define BATTERY_SEND_INTERVAL 60000 // ms - kirim data battery ke server
+#define BATTERY_SEND_INTERVAL       120000  // ms - kirim data battery ke server (saat aktif/working)
+#define BATTERY_SEND_INTERVAL_IDLE  300000 // ms - kirim data battery saat standby (5 menit, hemat baterai)
 
 // ===== DIRECT HTTP SERVER CONFIG =====
 #define ESP32_HTTP_PORT     80      // Port for receiving direct commands from browser
-#define FIRMWARE_VERSION    "2.1.5" // Firmware version for device registration
+#define FIRMWARE_VERSION    "2.2.0" // Firmware version for device registration
+
+// ===== MAIN LOOP TIMING =====
+#define ACTIVE_LOOP_DELAY   10      // ms - delay loop saat robot aktif (working)
+#define IDLE_LOOP_DELAY     50      // ms - delay loop saat standby (hemat CPU & baterai)
 
 // ===== MOTOR SETTINGS =====
 #define VACUUM_POWER_NORMAL 200     // Default PWM untuk vacuum NORMAL mode (0-255)

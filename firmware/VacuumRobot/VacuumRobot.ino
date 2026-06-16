@@ -56,33 +56,21 @@ void setup() {
   Serial.print("Firmware: v");
   Serial.println(FIRMWARE_VERSION);
   Serial.println("Commands: POST /command, GET /status");
-  Serial.println("Fallback polling: every " + String(API_POLL_INTERVAL / 1000) + " seconds");
+  Serial.println("Battery report: every " + String(BATTERY_SEND_INTERVAL / 1000) + "s (active), " + String(BATTERY_SEND_INTERVAL_IDLE / 1000) + "s (idle)");
   Serial.println("==========================================\n");
 }
 
-unsigned long lastBatterySend = 0;
-
 void loop() {
   // Update all subsystems
+  // RobotController handles: motor control, battery reporting, battery protection
+  // ApiClient handles: WebServer (incoming HTTP), device registration, reset button
   robot.update();
-  api.update(); // Handle WebServer + fallback polling
+  api.update();
   
-  // Send battery data periodically
-  if (millis() - lastBatterySend >= BATTERY_SEND_INTERVAL || lastBatterySend == 0) {
-    lastBatterySend = millis();
-    if (lastBatterySend == 0) lastBatterySend = 1; // Prevent re-triggering immediately
-    
-    float voltage = battery.getVoltage();
-    int percent = battery.getPercentage();
-    
-    Serial.print("[BATTERY] Voltage: ");
-    Serial.print(voltage);
-    Serial.print("V, Percentage: ");
-    Serial.print(percent);
-    Serial.println("%");
-    
-    api.sendBattery(percent, voltage);
+  // Adaptive delay: save power when idle, responsive when active
+  if (api.lastState == "working") {
+    delay(ACTIVE_LOOP_DELAY);
+  } else {
+    delay(IDLE_LOOP_DELAY);
   }
-  
-  delay(10); // Small delay for stability
 }

@@ -26,11 +26,24 @@ void RobotController::update() {
     vacuum.updateSoftStart();
     brush.updateSoftStart();
     
-    // 1. Battery Reporting
-    if (millis() - _lastBatteryCheck > BATTERY_SEND_INTERVAL) {
+    // 1. Battery Reporting (adaptive interval: faster when working, slower when idle)
+    unsigned long batteryInterval = (api.lastState == "working") 
+        ? BATTERY_SEND_INTERVAL 
+        : BATTERY_SEND_INTERVAL_IDLE;
+    
+    if (millis() - _lastBatteryCheck > batteryInterval) {
         _lastBatteryCheck = millis();
         int pct = battery.getPercentage();
         float volt = battery.getVoltage();
+        
+        Serial.print("[BATTERY] Voltage: ");
+        Serial.print(volt, 1);
+        Serial.print("V, Percentage: ");
+        Serial.print(pct);
+        Serial.print("% (interval: ");
+        Serial.print(batteryInterval / 1000);
+        Serial.println("s)");
+        
         api.sendBattery(pct, volt);
     }
 
