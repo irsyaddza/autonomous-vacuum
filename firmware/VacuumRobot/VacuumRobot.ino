@@ -36,6 +36,10 @@ void setup() {
   // Load timing settings from NVS
   timing.load();
 
+  // Apply NVS wheel speeds to motors (overrides config.h defaults)
+  wheels.setLeftSpeed(timing.leftWheelSpeed);
+  wheels.setRightSpeed(timing.rightWheelSpeed);
+
   // Start Direct HTTP Server (receives commands from browser)
   api.startWebServer();
 

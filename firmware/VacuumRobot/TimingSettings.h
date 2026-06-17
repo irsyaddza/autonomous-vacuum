@@ -33,6 +33,10 @@ struct TimingSettings {
     int stuckTimeWindow     = STUCK_TIME_WINDOW;
     int escapeTurnDuration  = ESCAPE_TURN_DURATION;
     
+    // Motor calibration (left/right wheel speed)
+    int leftWheelSpeed      = WHEEL_LEFT_SPEED;
+    int rightWheelSpeed     = WHEEL_RIGHT_SPEED;
+    
     // Reset semua ke default
     void resetDefaults() {
         backupDuration      = BACKUP_DURATION;
@@ -49,6 +53,8 @@ struct TimingSettings {
         stuckObstacleCount  = STUCK_OBSTACLE_COUNT;
         stuckTimeWindow     = STUCK_TIME_WINDOW;
         escapeTurnDuration  = ESCAPE_TURN_DURATION;
+        leftWheelSpeed      = WHEEL_LEFT_SPEED;
+        rightWheelSpeed     = WHEEL_RIGHT_SPEED;
     }
 
     void load();

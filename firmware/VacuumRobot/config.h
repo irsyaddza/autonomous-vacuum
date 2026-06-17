@@ -53,7 +53,7 @@
 
 // ===== DIRECT HTTP SERVER CONFIG =====
 #define ESP32_HTTP_PORT     80      // Port for receiving direct commands from browser
-#define FIRMWARE_VERSION    "2.2.0" // Firmware version for device registration
+#define FIRMWARE_VERSION    "2.2.3" // Firmware version for device registration
 
 // ===== MAIN LOOP TIMING =====
 #define ACTIVE_LOOP_DELAY   10      // ms - delay loop saat robot aktif (working)
@@ -63,23 +63,25 @@
 #define VACUUM_POWER_NORMAL 200     // Default PWM untuk vacuum NORMAL mode (0-255)
 #define BRUSH_SPEED         150     // PWM untuk brush motor (0-255)
 #define WHEEL_MOTOR_SPEED   170     // Default PWM untuk drive wheel motor (0-255)
+#define WHEEL_LEFT_SPEED    210     // Default PWM roda kiri (tune jika robot menyerong)
+#define WHEEL_RIGHT_SPEED   170     // Default PWM roda kanan (tune jika robot menyerong)
 
 // ===== CLEANING ALGORITHM SETTINGS =====
 // Obstacle avoidance timing
-#define BACKUP_DURATION         2000     // ms - durasi mundur saat ada obstacle
-#define TURN_DURATION_MIN       3400     // ms - durasi belok minimum (~90°)
-#define TURN_DURATION_MAX       6800    // ms - durasi belok maksimum (~180°)
-#define TURN_DURATION_SMALL     2600     // ms - belok kecil (~60°) untuk obstacle samping
+#define BACKUP_DURATION         600     // ms - durasi mundur saat ada obstacle
+#define TURN_DURATION_MIN       3700     // ms - durasi belok minimum (~90°)
+#define TURN_DURATION_MAX       7400    // ms - durasi belok maksimum (~180°)
+#define TURN_DURATION_SMALL     1850     // ms - belok kecil (~60°) untuk obstacle samping
 
 // Cliff avoidance timing (prioritas lebih tinggi)
 #define CLIFF_BACKUP_DURATION   1500     // ms - durasi mundur saat cliff (lebih lama)
-#define CLIFF_TURN_DURATION     6800     // ms - durasi putar 180° saat cliff
+#define CLIFF_TURN_DURATION     7400     // ms - durasi putar 180° saat cliff
 
 // Spiral pattern settings
 #define SPIRAL_INITIAL_DURATION 3000     // ms - durasi lurus awal spiral
 #define SPIRAL_INCREMENT        2000     // ms - penambahan durasi setiap putaran spiral
-#define SPIRAL_MAX_DURATION     30000    // ms - durasi lurus maksimum sebelum pindah ke random bounce
-#define SPIRAL_TURN_DURATION    3400     // ms - durasi belok 90° saat spiral
+#define SPIRAL_MAX_DURATION     3000000    // ms - durasi lurus maksimum sebelum pindah ke random bounce
+#define SPIRAL_TURN_DURATION    3700     // ms - durasi belok 90° saat spiral
 
 // Re-spiral trigger
 #define RESPIRAL_IDLE_TIME      30000    // ms - durasi tanpa obstacle di open area sebelum re-trigger spiral
@@ -87,7 +89,7 @@
 // Stuck detection
 #define STUCK_OBSTACLE_COUNT    3       // Jumlah obstacle berturut-turut sebelum escape
 #define STUCK_TIME_WINDOW       4000    // ms - jendela waktu untuk stuck detection
-#define ESCAPE_TURN_DURATION    1500    // ms - durasi putar escape (~360°)
+#define ESCAPE_TURN_DURATION    7400    // ms - durasi putar escape 
 
 // Sensor debounce
 #define SENSOR_DEBOUNCE_COUNT   2       // Jumlah consecutive reads untuk konfirmasi sensor

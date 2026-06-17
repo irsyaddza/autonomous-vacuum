@@ -272,6 +272,24 @@
                         <small class="text-muted">Idle duration in open area before re-triggering spiral</small>
                     </div>
                 </div>
+                <!-- Motor Calibration -->
+                <div class="col-md-4">
+                    <h6 class="fw-semibold mb-3" style="color: var(--info); font-size: 0.85rem;"><i class="fas fa-cogs me-1"></i> Motor calibration</h6>
+                    <div class="mb-3">
+                        <label class="form-label small text-secondary fw-medium">Left wheel speed (PWM 0-255)</label>
+                        <input type="number" class="form-control form-control-sm bg-dark text-white border-secondary" id="t_leftWheelSpeed" min="0" max="255" step="5">
+                        <small class="text-muted">Increase if robot veers right, decrease if veers left</small>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small text-secondary fw-medium">Right wheel speed (PWM 0-255)</label>
+                        <input type="number" class="form-control form-control-sm bg-dark text-white border-secondary" id="t_rightWheelSpeed" min="0" max="255" step="5">
+                        <small class="text-muted">Increase if robot veers left, decrease if veers right</small>
+                    </div>
+                    <div class="rounded-3 p-2 small" style="background: rgba(255,255,255,0.025); border: 1px solid var(--surface-border);">
+                        <i class="fas fa-info-circle me-1" style="color: var(--info);"></i>
+                        Adjust these values to make the robot drive straight. If it drifts left, increase left speed or decrease right speed.
+                    </div>
+                </div>
             </div>
             <div class="rounded-3 p-3 mt-3 small" style="background: rgba(255,255,255,0.025); border: 1px solid var(--surface-border);">
                 <i class="fas fa-info-circle me-1" style="color: var(--accent);"></i>
@@ -503,7 +521,8 @@
             'cliffBackupDuration', 'cliffTurnDuration',
             'spiralInitialDuration', 'spiralIncrement', 'spiralMaxDuration', 'spiralTurnDuration',
             'respiralIdleTime',
-            'stuckObstacleCount', 'stuckTimeWindow', 'escapeTurnDuration'
+            'stuckObstacleCount', 'stuckTimeWindow', 'escapeTurnDuration',
+            'leftWheelSpeed', 'rightWheelSpeed'
         ];
 
         function populateTimingFields(timing) {

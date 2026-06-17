@@ -4,9 +4,11 @@
 #include "SensorArray.h"
 #include "BatteryMonitor.h"
 #include "TimingSettings.h"
+#include "WheelMotor.h"
 
 extern SensorArray sensors;
 extern BatteryMonitor battery;
+extern WheelMotor wheels;
 #include <WiFiManager.h>
 #include <Update.h>
 #include <esp_wifi.h>
@@ -447,6 +449,8 @@ void ApiClient::_handleDiagnostic() {
     ts["stuckObstacleCount"] = timing.stuckObstacleCount;
     ts["stuckTimeWindow"] = timing.stuckTimeWindow;
     ts["escapeTurnDuration"] = timing.escapeTurnDuration;
+    ts["leftWheelSpeed"] = timing.leftWheelSpeed;
+    ts["rightWheelSpeed"] = timing.rightWheelSpeed;
     
     String response;
     serializeJson(doc, response);
@@ -480,10 +484,20 @@ void ApiClient::_handleSettings() {
     if (doc.containsKey("stuckObstacleCount"))   timing.stuckObstacleCount = doc["stuckObstacleCount"];
     if (doc.containsKey("stuckTimeWindow"))      timing.stuckTimeWindow = doc["stuckTimeWindow"];
     if (doc.containsKey("escapeTurnDuration"))   timing.escapeTurnDuration = doc["escapeTurnDuration"];
+    if (doc.containsKey("leftWheelSpeed")) {
+        timing.leftWheelSpeed = doc["leftWheelSpeed"];
+        wheels.setLeftSpeed(timing.leftWheelSpeed);
+    }
+    if (doc.containsKey("rightWheelSpeed")) {
+        timing.rightWheelSpeed = doc["rightWheelSpeed"];
+        wheels.setRightSpeed(timing.rightWheelSpeed);
+    }
     
     // Reset ke default jika diminta
     if (doc.containsKey("resetDefaults") && doc["resetDefaults"] == true) {
         timing.resetDefaults();
+        wheels.setLeftSpeed(timing.leftWheelSpeed);
+        wheels.setRightSpeed(timing.rightWheelSpeed);
     }
     
     timing.save();

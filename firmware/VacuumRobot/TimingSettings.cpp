@@ -19,6 +19,8 @@ void TimingSettings::load() {
     stuckObstacleCount = timingPrefs.getInt("stuckCount", STUCK_OBSTACLE_COUNT);
     stuckTimeWindow = timingPrefs.getInt("stuckTime", STUCK_TIME_WINDOW);
     escapeTurnDuration = timingPrefs.getInt("escapeTurn", ESCAPE_TURN_DURATION);
+    leftWheelSpeed = timingPrefs.getInt("leftWheelSpd", WHEEL_LEFT_SPEED);
+    rightWheelSpeed = timingPrefs.getInt("rightWheelSpd", WHEEL_RIGHT_SPEED);
     timingPrefs.end();
 }
 
@@ -38,5 +40,7 @@ void TimingSettings::save() {
     timingPrefs.putInt("stuckCount", stuckObstacleCount);
     timingPrefs.putInt("stuckTime", stuckTimeWindow);
     timingPrefs.putInt("escapeTurn", escapeTurnDuration);
+    timingPrefs.putInt("leftWheelSpd", leftWheelSpeed);
+    timingPrefs.putInt("rightWheelSpd", rightWheelSpeed);
     timingPrefs.end();
 }
