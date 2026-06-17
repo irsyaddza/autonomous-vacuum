@@ -37,15 +37,29 @@ public:
     String lastDirection = "";
 
 private:
-    void _handleCommand();       // Handler for POST /command
-    void _handleStatus();        // Handler for GET /status
-    void _handleDiagnostic();    // Handler for GET /diagnostic
-    void _handleSettings();      // Handler for POST /settings
-    void _handleCorsOptions();   // Handler for OPTIONS (CORS preflight)
-    void _addCorsHeaders();      // Add CORS headers to response
+    void _handleCommand();           // Handler for POST /command
+    void _handleStatus();            // Handler for GET /status
+    void _handleDiagnostic();        // Handler for GET /diagnostic
+    void _handleSettings();          // Handler for POST /settings
+    void _handleCorsOptions();       // Handler for OPTIONS (CORS preflight)
+    void _addCorsHeaders();          // Add CORS headers to response
+    void _handleFirmwarePage(WebServer* customServer = nullptr);      // Handler for GET /firmware (OTA upload page)
+    void _handleFirmwareUpload(WebServer* customServer = nullptr);    // Handler for POST /update (OTA binary upload)
+    
+    // Power Management Web
+    void _handlePowerPage(WebServer* customServer = nullptr);         // Handler for GET /power
+    void _handlePowerData(WebServer* customServer = nullptr);         // Handler for GET /power-data
     
     String apiBaseUrl;           // Stored API URL
     Preferences preferences;     // Preferences for NVS storage
+    
+    bool isRegistered = false;
+    unsigned long lastRegistrationAttempt = 0;
+    
+    // Battery Sync Tracking
+    String lastSyncStatus = "Never Synced";
+    unsigned long lastSyncTime = 0;
+    String lastBatteryEventStatus = "None";
 };
 
 #endif

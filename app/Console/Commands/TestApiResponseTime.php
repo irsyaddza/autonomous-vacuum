@@ -30,10 +30,11 @@ class TestApiResponseTime extends Command
         set_time_limit(0);
         
         $endpoints = [
-            ['uri' => 'v1/vacuum/status', 'method' => 'GET', 'payload' => []],
             ['uri' => 'v1/vacuum/battery/latest', 'method' => 'GET', 'payload' => []],
             ['uri' => 'v1/vacuum/device', 'method' => 'GET', 'payload' => []],
             ['uri' => 'v1/vacuum/full-status', 'method' => 'GET', 'payload' => []],
+            ['uri' => 'v1/vacuum/command-logs', 'method' => 'GET', 'payload' => []],
+            ['uri' => 'v1/vacuum/battery-events/latest', 'method' => 'GET', 'payload' => []],
             ['uri' => 'v1/vacuum/command-log', 'method' => 'POST', 'payload' => [
                 'command' => 'test_start',
                 'source' => 'web',
@@ -46,16 +47,14 @@ class TestApiResponseTime extends Command
                 'mac_address' => '00:11:22:33:44:55',
                 'firmware_version' => '2.0.0'
             ]],
-            ['uri' => 'v1/vacuum/battery/history', 'method' => 'GET', 'payload' => []],
-            ['uri' => 'v1/vacuum/command', 'method' => 'POST', 'payload' => [
-                'command' => 'start'
-            ]],
-            ['uri' => 'v1/vacuum/power-mode', 'method' => 'POST', 'payload' => [
-                'mode' => 'eco'
-            ]],
             ['uri' => 'v1/vacuum/battery', 'method' => 'POST', 'payload' => [
-                'level' => 85,
-                'is_charging' => false
+                'battery_percent' => 85,
+                'battery_voltage' => 12.4
+            ]],
+            ['uri' => 'v1/vacuum/battery-event', 'method' => 'POST', 'payload' => [
+                'event' => 'low_battery_warning',
+                'battery_percent' => 15,
+                'battery_voltage' => 11.2
             ]]
         ];
 

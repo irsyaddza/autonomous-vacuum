@@ -21,3 +21,10 @@ yarn-error.log
 /.nova
 /.vscode
 /.zed
+
+# Firmware build outputs
+/firmware/*.bin
+/firmware/*.elf
+/firmware/*.map
+/firmware/build/
+/firmware/*/build/

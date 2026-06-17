@@ -47,7 +47,6 @@ class TestCommandAccuracy extends Command
         $commands = [
             ['name' => 'START', 'payload' => ['command' => 'start']],
             ['name' => 'STOP', 'payload' => ['command' => 'stop']],
-            ['name' => 'RETURN', 'payload' => ['command' => 'return_home']],
             ['name' => 'ECO', 'payload' => ['command' => 'eco', 'value' => 150]],
             ['name' => 'NORMAL', 'payload' => ['command' => 'normal', 'value' => 200]],
             ['name' => 'STRONG', 'payload' => ['command' => 'strong', 'value' => 255]],
@@ -86,7 +85,7 @@ class TestCommandAccuracy extends Command
                 }
                 
                 // Add a small delay between commands to prevent overloading the ESP32 server
-                usleep(200000); 
+                sleep(2); 
                 $bar->advance();
             }
             $bar->finish();

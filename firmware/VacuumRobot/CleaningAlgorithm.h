@@ -50,8 +50,11 @@ private:
     unsigned long _stateDuration = 0;
     
     // Spiral tracking
-    unsigned long _spiralForwardDuration = 0;  // Durasi lurus saat spiral
-    bool _spiralTurnRight = true;              // Alternating turn direction
+    unsigned long _spiralForwardDuration = 0;  // Current forward segment duration (expands over time)
+    int _spiralSegmentCount = 0;              // Segments completed at current length
+    
+    // Re-spiral open area detection
+    unsigned long _openAreaTimer = 0;         // Timestamp of last obstacle during FORWARD
     
     // Turn tracking
     TurnDirection _turnDir = TURN_RIGHT;
@@ -61,6 +64,11 @@ private:
     bool _cliffWasFront = false;
     bool _cliffWasLeft  = false;
     bool _cliffWasRight = false;
+    
+    // Obstacle state snapshot (saved when obstacle first detected)
+    bool _obsWasFront = false;
+    bool _obsWasLeft  = false;
+    bool _obsWasRight = false;
     
     // Stuck detection
     unsigned long _lastObstacleTime = 0;

@@ -17,16 +17,13 @@ public:
     bool isFrontBlocked();
     bool isLeftBlocked();
     bool isRightBlocked();
+    bool isAnyObstacle();
 
     // Cliff
     bool isCliffFront();
     bool isCliffLeft();
     bool isCliffRight();
     bool isCliffDetected();
-
-    // BLE RSSI Homing
-    void updateRSSI(int rssi);
-    int getRSSI();
 
 private:
 
@@ -39,9 +36,6 @@ private:
     bool _cliffFront = false;
     bool _cliffLeft  = false;
     bool _cliffRight = false;
-
-    // BLE RSSI
-    int _rssi = -100;
 };
 
 #endif

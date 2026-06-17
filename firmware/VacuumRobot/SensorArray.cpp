@@ -38,10 +38,14 @@ bool SensorArray::readObstacles() {
 
 bool SensorArray::readCliffs() {
 
-    // Active LOW
-    _cliffLeft  = (digitalRead(PIN_CLIFF_LEFT)  == LOW);
-    _cliffFront = (digitalRead(PIN_CLIFF_FRONT) == LOW);
-    _cliffRight = (digitalRead(PIN_CLIFF_RIGHT) == LOW);
+    // Active HIGH (Cliff/no floor = HIGH, Floor/reflection = LOW)
+    _cliffLeft  = (digitalRead(PIN_CLIFF_LEFT)  == HIGH);
+    _cliffFront = (digitalRead(PIN_CLIFF_FRONT) == HIGH);
+    _cliffRight = (digitalRead(PIN_CLIFF_RIGHT) == HIGH);
+    // Active HIGH (High means no floor / cliff detected)
+    _cliffLeft  = (digitalRead(PIN_CLIFF_LEFT)  == HIGH);
+    _cliffFront = (digitalRead(PIN_CLIFF_FRONT) == HIGH);
+    _cliffRight = (digitalRead(PIN_CLIFF_RIGHT) == HIGH);
 
     return (_cliffLeft || _cliffFront || _cliffRight);
 }
@@ -50,46 +54,19 @@ bool SensorArray::readCliffs() {
 // OBSTACLE GETTER
 // =====================================================
 
-bool SensorArray::isFrontBlocked() {
-    return _obsFront;
-}
-
-bool SensorArray::isLeftBlocked() {
-    return _obsLeft;
-}
-
-bool SensorArray::isRightBlocked() {
-    return _obsRight;
-}
+bool SensorArray::isFrontBlocked() { return _obsFront; }
+bool SensorArray::isLeftBlocked()  { return _obsLeft;  }
+bool SensorArray::isRightBlocked() { return _obsRight; }
+bool SensorArray::isAnyObstacle()   { return (_obsFront || _obsLeft || _obsRight); }
 
 // =====================================================
 // CLIFF GETTER
 // =====================================================
 
-bool SensorArray::isCliffFront() {
-    return _cliffFront;
-}
-
-bool SensorArray::isCliffLeft() {
-    return _cliffLeft;
-}
-
-bool SensorArray::isCliffRight() {
-    return _cliffRight;
-}
+bool SensorArray::isCliffFront()    { return _cliffFront; }
+bool SensorArray::isCliffLeft()     { return _cliffLeft;  }
+bool SensorArray::isCliffRight()    { return _cliffRight; }
 
 bool SensorArray::isCliffDetected() {
     return (_cliffLeft || _cliffFront || _cliffRight);
-}
-
-// =====================================================
-// RSSI HOMING
-// =====================================================
-
-void SensorArray::updateRSSI(int rssi) {
-    _rssi = rssi;
-}
-
-int SensorArray::getRSSI() {
-    return _rssi;
 }

@@ -26,7 +26,8 @@ void CleaningAlgorithm::start() {
     
     _active = true;
     _spiralForwardDuration = timing.spiralInitialDuration;
-    _spiralTurnRight = true;
+    _spiralSegmentCount = 0;
+    _openAreaTimer = 0;
     
     // Mulai dengan fase spiral
     _setState(CLEAN_SPIRAL);
@@ -102,43 +103,42 @@ bool CleaningAlgorithm::update() {
 
 // ===== STATE HANDLERS =====
 
-// Fase 1: Spiral Expanding
-// Robot bergerak lurus, belok 90°, lurus lebih panjang, belok 90°, repeat
-// Spiral mengembang sampai hit obstacle atau durasi max
+// Fase 1: Spiral Expanding (Square Spiral)
+// Pattern: forward(X) → turn right 90° → forward(X) → turn right 90°
+//          → forward(X+inc) → turn right 90° → forward(X+inc) → ...
+// Two segments per length, always turning RIGHT → expanding square spiral
 void CleaningAlgorithm::_handleSpiral() {
     unsigned long elapsed = millis() - _stateStartTime;
     
     // Cek obstacle kapan saja selama spiral (lurus maupun belok)
     if (sensors.isAnyObstacle()) {
         Serial.println("[CLEAN] Spiral: Obstacle detected → switching to Random Bounce");
+        _spiralSegmentCount = 0;
         _startBackupObstacle();
         return;
     }
     
-    // Bergerak lurus selama _spiralForwardDuration
     if (elapsed < _spiralForwardDuration) {
+        // Phase A: Bergerak lurus
         wheels.moveForward();
+    } else if (elapsed < _spiralForwardDuration + (unsigned long)timing.spiralTurnDuration) {
+        // Phase B: Belok kanan 90°
+        wheels.turnRight();
     } else {
-        // Waktu lurus habis → belok 90°
-        if (_spiralTurnRight) {
-            wheels.turnRight();
-        } else {
-            wheels.turnLeft();
-        }
+        // Turn selesai → hitung segment dan expand
+        _spiralSegmentCount++;
         
-        // Tunggu belok selesai
-        if (elapsed < _spiralForwardDuration + (unsigned long)timing.spiralTurnDuration) {
-            // Still turning, wait
-            return;
+        // Setiap 2 segment di panjang yang sama, tambah durasi lurus
+        if (_spiralSegmentCount >= 2) {
+            _spiralSegmentCount = 0;
+            _spiralForwardDuration += timing.spiralIncrement;
         }
-        
-        // Belok selesai, tambah durasi lurus untuk spiral mengembang
-        _spiralForwardDuration += timing.spiralIncrement;
-        _spiralTurnRight = !_spiralTurnRight;  // Alternate direction for spiral
         
         // Cek apakah spiral sudah cukup besar → pindah ke Random Bounce
         if (_spiralForwardDuration >= (unsigned long)timing.spiralMaxDuration) {
             Serial.println("[CLEAN] Spiral complete → Phase 2: Random Bounce");
+            _spiralSegmentCount = 0;
+            _openAreaTimer = millis();
             _setState(CLEAN_FORWARD);
             wheels.moveForward();
             return;
@@ -148,13 +148,16 @@ void CleaningAlgorithm::_handleSpiral() {
         _stateStartTime = millis();
         wheels.moveForward();
         
-        Serial.print("[CLEAN] Spiral: next segment = ");
+        Serial.print("[CLEAN] Spiral: segment=");
+        Serial.print(_spiralSegmentCount);
+        Serial.print(" forward=");
         Serial.print(_spiralForwardDuration);
         Serial.println("ms");
     }
 }
 
 // Fase 2: Random Bounce - jalan lurus sampai ada obstacle
+// Re-trigger spiral jika tidak ada obstacle selama respiralIdleTime (open area)
 void CleaningAlgorithm::_handleForward() {
     // Cek obstacle
     if (sensors.isAnyObstacle()) {
@@ -165,7 +168,19 @@ void CleaningAlgorithm::_handleForward() {
         Serial.print(" Right=");
         Serial.println(sensors.isRightBlocked());
         
+        _openAreaTimer = millis();  // Reset open area timer
         _startBackupObstacle();
+        return;
+    }
+    
+    // Re-spiral: jika di open area terlalu lama tanpa obstacle
+    if (_openAreaTimer > 0 && 
+        (millis() - _openAreaTimer) >= (unsigned long)timing.respiralIdleTime) {
+        Serial.println("[CLEAN] Open area detected (no obstacle for " + String(timing.respiralIdleTime / 1000) + "s) → Re-triggering spiral");
+        _spiralSegmentCount = 0;
+        // Keep current _spiralForwardDuration — continue spiral from current size
+        _setState(CLEAN_SPIRAL);
+        wheels.moveForward();
         return;
     }
     
@@ -181,22 +196,17 @@ void CleaningAlgorithm::_handleBackupObstacle() {
         wheels.moveBackward();
     } else {
         // Mundur selesai → mulai belok
-        // Simpan snapshot sensor SEKARANG karena setelah belok sensor bisa berubah
-        bool front = sensors.isFrontBlocked();
-        bool left  = sensors.isLeftBlocked();
-        bool right = sensors.isRightBlocked();
-        
         TurnDirection dir = _decideTurnDirection();
         
-        // Pilih durasi belok berdasarkan kondisi obstacle:
+        // Pilih durasi belok berdasarkan snapshot kondisi obstacle:
         unsigned long duration;
-        if (front && left && right) {
+        if (_obsWasFront && _obsWasLeft && _obsWasRight) {
             // Semua sisi terblokir (pojok) → putar besar
             duration = timing.turnDurationMax;
-        } else if (front) {
+        } else if (_obsWasFront) {
             // Depan terblokir → belok sedang-besar
             duration = random(timing.turnDurationMin, timing.turnDurationMax + 1);
-        } else if (left != right) {
+        } else if (_obsWasLeft != _obsWasRight) {
             // Hanya satu sisi terblokir, depan clear → belok kecil
             duration = timing.turnDurationSmall;
         } else {
@@ -261,6 +271,7 @@ void CleaningAlgorithm::_handleTurning() {
             _startBackupObstacle();
         } else {
             // Depan clear → jalan lurus lagi
+            _openAreaTimer = millis();  // Reset open area timer
             _setState(CLEAN_FORWARD);
             wheels.moveForward();
             Serial.println("[CLEAN] Turn complete → Moving forward");
@@ -312,6 +323,11 @@ void CleaningAlgorithm::_setState(CleanState newState) {
 void CleaningAlgorithm::_startBackupObstacle() {
     wheels.stop();
     
+    // Simpan snapshot sensor SEKARANG sebelum robot mundur
+    _obsWasFront = sensors.isFrontBlocked();
+    _obsWasLeft  = sensors.isLeftBlocked();
+    _obsWasRight = sensors.isRightBlocked();
+    
     // Stuck detection: jika terlalu sering obstacle dalam waktu singkat
     if (millis() - _lastObstacleTime < (unsigned long)timing.stuckTimeWindow) {
         _obstacleCount++;
@@ -354,9 +370,10 @@ unsigned long CleaningAlgorithm::_randomTurnDuration() {
 
 // Tentukan arah belok berdasarkan sensor mana yang triggered
 TurnDirection CleaningAlgorithm::_decideTurnDirection() {
-    bool front = sensors.isFrontBlocked();
-    bool left  = sensors.isLeftBlocked();
-    bool right = sensors.isRightBlocked();
+    // Gunakan snapshot obstacle yang disimpan sebelum mundur
+    bool front = _obsWasFront;
+    bool left  = _obsWasLeft;
+    bool right = _obsWasRight;
     
     // PRIORITAS 1: Semua sisi terblokir (pojok/sudut mati) → random
     if (front && left && right) {
