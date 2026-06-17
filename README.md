@@ -1,202 +1,185 @@
-# 🤖 Autonomous Vacuum Robot
+# Autonomous Vacuum Robot
 
-<p align="center">
-  <img src="https://img.shields.io/badge/ESP32-Microcontroller-blue?style=for-the-badge&logo=espressif" alt="ESP32">
-  <img src="https://img.shields.io/badge/Laravel-Framework-red?style=for-the-badge&logo=laravel" alt="Laravel">
-  <img src="https://img.shields.io/badge/License-MIT-green?style=for-the-badge" alt="MIT License">
-</p>
-
-<p align="center">
-  <strong>Web-controlled autonomous vacuum robot with monitoring and ESP32 integration.</strong>
-</p>
+Web dashboard and firmware for an ESP32-based autonomous vacuum. Control the robot, monitor sensors, and tune cleaning parameters from a browser.
 
 ---
 
-## ✨ Features
+## What it does
 
-### 🌐 Web Dashboard
-- **Status Monitoring** — Live robot status (Standby, Cleaning, Returning, Charging)
-- **Battery Monitoring** — Battery percentage with visual progress bar
-- **Remote Control** — Start, Stop, and Return Home commands
-- **Power Mode Selection** — ECO, NORMAL, and STRONG suction modes
-- **Responsive Design** — Works on desktop and mobile devices
+The robot moves in an expanding spiral pattern, then switches to random bounce navigation. Six IR sensors handle obstacle avoidance and cliff detection. A Laravel backend logs commands and battery events. The web dashboard communicates directly with the ESP32 over HTTP for low-latency control.
 
-### 🔧 Hardware Control
-- **Vacuum Motor** — PWM-controlled suction with 3 power levels
-- **Brush Motor** — Forward/reverse brush rotation
-- **Wheel Motors** — Differential drive (left/right wheels) for navigation
-- **Obstacle Detection** — 3x IR sensors (left, front, right)
-- **Cliff Detection** — 3x IR cliff sensors to prevent falls
-- **Battery Monitoring** — Voltage divider + ADC for battery level
+**Dashboard**
+- Live robot status with battery percentage and voltage
+- Start/stop commands and suction power selection (eco, normal, strong)
+- Command history with response times
+- Responsive layout for desktop and mobile
 
----
+**Diagnostic**
+- Real-time polling of all six IR sensors (raw + debounced values)
+- Live timing parameter tuning without reflashing firmware
+- Raw JSON log for debugging
 
-## 🛠️ Tech Stack
-
-| Component | Technology |
-|-----------|------------|
-| **Backend** | Laravel 12 (PHP) |
-| **Frontend** | Blade + Bootstrap 5 + jQuery |
-| **Microcontroller** | ESP32 |
-| **Database** | MySQL |
-| **API** | RESTful JSON API |
+**Firmware**
+- Spiral expanding + random bounce cleaning algorithm
+- Obstacle avoidance with stuck detection and escape maneuvers
+- Cliff protection with immediate motor halt
+- Battery monitoring with auto-stop at depletion
+- WiFi AP mode for initial network setup
 
 ---
 
-## 📁 Project Structure
+## Stack
+
+| Layer | Technology |
+|-------|------------|
+| Microcontroller | ESP32 (Arduino framework) |
+| Backend | Laravel 12 (PHP 8.3) |
+| Frontend | Blade templates, Bootstrap 5.3, vanilla JS (fetch API) |
+| Database | MySQL 8 |
+| API | RESTful JSON, Scramble-documented |
+
+---
+
+## Project structure
 
 ```
-vacuum_web/
 ├── app/
-│   └── Http/Controllers/
-│       └── VacuumAPIController.php   # REST API endpoints
-├── firmware/
-│   └── VacuumRobot/
-│       ├── VacuumRobot.ino           # Main Arduino sketch
-│       ├── config.h                  # Pin & WiFi configuration
-│       ├── ApiClient.cpp/h           # HTTP client for Laravel API
-│       ├── RobotController.cpp/h     # Main robot logic
-│       ├── VacuumMotor.cpp/h         # Vacuum motor control
-│       ├── BrushMotor.cpp/h          # Brush motor control
-│       ├── WheelMotor.cpp/h          # Wheel motor control
-│       ├── SensorArray.cpp/h         # IR obstacle/cliff sensors
-│       └── BatteryMonitor.cpp/h      # Battery voltage monitoring
+│   ├── Http/Controllers/
+│   │   └── VacuumAPIController.php       # REST API endpoints
+│   ├── Models/
+│   │   ├── BatteryLog.php                # Battery event log model
+│   │   ├── CommandLog.php                # Command history model
+│   │   ├── Esp32Device.php               # Registered ESP32 devices
+│   │   └── VacuumStatus.php              # Robot status snapshots
+│   └── Console/Commands/
+│       ├── CompileFirmware.php            # Artisan firmware build command
+│       └── TestCommandAccuracy.php        # API accuracy test
+├── firmware/VacuumRobot/
+│   ├── VacuumRobot.ino                   # Main Arduino sketch
+│   ├── config.h                          # Pin definitions and WiFi config
+│   ├── RobotController.cpp/h             # Main robot state machine
+│   ├── CleaningAlgorithm.cpp/h           # Spiral + random bounce logic
+│   ├── ApiClient.cpp/h                   # HTTP client for Laravel API
+│   ├── SensorArray.cpp/h                 # IR obstacle and cliff sensors
+│   ├── BatteryMonitor.cpp/h              # ADC voltage reading
+│   ├── VacuumMotor.cpp/h                 # PWM suction control
+│   ├── BrushMotor.cpp/h                  # Brush rotation
+│   ├── WheelMotor.cpp/h                  # Differential drive
+│   └── TimingSettings.cpp/h              # Runtime-tunable timing values
 ├── resources/views/
-│   └── main.blade.php                # Dashboard view
-└── routes/
-    └── api.php                       # API routes
+│   ├── main.blade.php                    # Dashboard
+│   ├── diagnostic.blade.php              # Sensor diagnostic page
+│   └── about.blade.php                   # About page
+├── routes/
+│   └── web.php                           # All routes (web + API)
+└── public/css/
+    └── custom-dark.css                   # Dashboard styling
 ```
 
 ---
 
-## ⚡ Quick Start
+## Setup
 
 ### Prerequisites
-- PHP 8.3.16+
+
+- PHP 8.3+
 - Composer
-- MySQL 8.4.7
-- Node.js (for frontend assets)
-- Arduino IDE (for ESP32)
+- MySQL 8+
+- Arduino IDE or arduino-cli (for ESP32 firmware)
 
-### Installation
+### Web server
 
-1. **Clone the repository**
-   ```bash
-   git clone https://github.com/yourusername/vacuum_web.git
-   cd vacuum_web
-   ```
+```bash
+git clone <your-repo-url>
+cd autonomous_vacuum
 
-2. **Install dependencies**
-   ```bash
-   composer install
-   npm install
-   ```
+composer install
 
-3. **Configure environment**
-   ```bash
-   cp .env.example .env
-   php artisan key:generate
-   ```
+cp .env.example .env
+php artisan key:generate
 
-4. **Setup database**
-   ```bash
-   # Edit .env with your MySQL credentials
-   php artisan migrate
-   ```
+# Edit .env with your MySQL credentials, then:
+php artisan migrate --seed
+php artisan serve
+```
 
-5. **Run the server**
-   ```bash
-   php artisan serve
-   ```
+Dashboard is at `http://localhost:8000`.
 
-6. **Access the dashboard**
-   ```
-   http://localhost:8000
-   ```
-
-### ESP32 Setup
+### ESP32 firmware
 
 1. Open `firmware/VacuumRobot/VacuumRobot.ino` in Arduino IDE
-2. Edit `config.h` to set your API URL and WiFi credentials
+2. Edit `config.h` — set your WiFi SSID, password, and Laravel API URL
 3. Upload to ESP32
-4. Connect to "VacuumRobot" WiFi AP for initial setup
+4. On first boot, connect to the "VacuumRobot" WiFi AP to register the device
+
+Alternatively, use the Artisan compile command:
+```bash
+php artisan firmware:compile --port COM3
+```
 
 ---
 
-## 🔌 Hardware Pinout
+## Hardware pinout
 
-### Motor Driver 1 (L298N #1) — Brush & Vacuum
-| Function | ESP32 Pin | L298N Pin |
-|----------|-----------|-----------|
-| Brush Forward | GPIO 23 | IN1 |
-| Brush Reverse | GPIO 25 | IN2 |
-| Vacuum PWM 1 | GPIO 26 | IN3 |
-| Vacuum PWM 2 | GPIO 32 | IN4 |
+### Motor driver 1 (L298N) — Brush and vacuum
 
-### Motor Driver 2 (L298N #2) — Wheels
-| Function | ESP32 Pin | L298N Pin |
-|----------|-----------|-----------|
-| Left Wheel FWD | GPIO 12 | IN1 |
-| Left Wheel REV | GPIO 13 | IN2 |
-| Right Wheel FWD | GPIO 14 | IN3 |
-| Right Wheel REV | GPIO 15 | IN4 |
+| Function | ESP32 GPIO | L298N |
+|----------|------------|-------|
+| Brush forward | 23 | IN1 |
+| Brush reverse | 25 | IN2 |
+| Vacuum PWM 1 | 26 | IN3 |
+| Vacuum PWM 2 | 32 | IN4 |
 
-### Sensors
-| Sensor | ESP32 Pin |
-|--------|-----------|
-| IR Left | GPIO 16 |
-| IR Front | GPIO 17 |
-| IR Right | GPIO 18 |
-| Cliff Left | GPIO 19 |
-| Cliff Front | GPIO 21 |
-| Cliff Right | GPIO 22 |
-| Battery ADC | GPIO 36 (VP) |
-| WiFi Reset | GPIO 0 (BOOT) |
+### Motor driver 2 (L298N) — Wheels
 
----
+| Function | ESP32 GPIO | L298N |
+|----------|------------|-------|
+| Left wheel forward | 12 | IN1 |
+| Left wheel reverse | 13 | IN2 |
+| Right wheel forward | 14 | IN3 |
+| Right wheel reverse | 15 | IN4 |
 
-## 📡 API Endpoints
+### Sensors and other
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/v1/vacuum/status` | Get robot status |
-| POST | `/v1/vacuum/command` | Send command (start/stop/return_home) |
-| POST | `/v1/vacuum/power-mode` | Set suction power mode |
-| GET | `/v1/vacuum/battery/latest` | Get latest battery data |
-| GET | `/v1/vacuum/full-status` | Get complete robot status |
+| Component | ESP32 GPIO |
+|-----------|------------|
+| IR obstacle left | 16 |
+| IR obstacle front | 17 |
+| IR obstacle right | 18 |
+| IR cliff left | 19 |
+| IR cliff front | 21 |
+| IR cliff right | 22 |
+| Battery ADC (voltage divider) | 36 (VP) |
+| WiFi reset button | 0 (BOOT) |
 
 ---
 
-## 🎮 Suction Power Modes
+## API
 
-| Mode | PWM Value | Description |
-|------|-----------|-------------|
-| **ECO** | 150 | Energy saving, quiet operation |
-| **NORMAL** | 200 | Standard suction power |
-| **STRONG** | 255 | Maximum power for deep cleaning |
+Full interactive documentation is available at `/docs/api` (Scramble).
+
+| Method | Endpoint | Purpose |
+|--------|----------|--------|
+| GET | `/v1/vacuum/full-status` | Combined robot status + battery |
+| GET | `/v1/vacuum/status` | Latest robot status |
+| GET | `/v1/vacuum/battery/latest` | Latest battery reading |
+| GET | `/v1/vacuum/battery-events/latest` | Latest battery event (warning/auto-stop) |
+| POST | `/v1/vacuum/command` | Send command to robot |
+| POST | `/v1/vacuum/command-log` | Log a command entry |
+| GET | `/v1/vacuum/command-logs` | Fetch command history |
+| GET | `/v1/vacuum/device` | Get registered ESP32 device info |
+| POST | `/v1/vacuum/reset-devices` | Clear registered ESP32 IP |
+
+### Suction modes
+
+| Mode | PWM value | Use case |
+|------|-----------|----------|
+| Eco | 150 | Hard floors, quiet operation |
+| Normal | 200 | Standard cleaning |
+| Strong | 255 | Carpet, deep cleaning |
 
 ---
 
-## 📄 License
+## License
 
-MIT License
-
-Copyright (c) 2026 Autonomous Vacuum Robot
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+MIT
