@@ -35,20 +35,6 @@ void RobotController::begin() {
 // =====================================================
 
 void RobotController::update() {
-<<<<<<< HEAD
-
-    // =========================================
-    // Battery Reporting
-    // =========================================
-
-    if (millis() - _lastBatteryCheck > BATTERY_SEND_INTERVAL) {
-
-        _lastBatteryCheck = millis();
-
-        int pct     = battery.getPercentage();
-        float volt  = battery.getVoltage();
-
-=======
     // Update soft start ramping (non-blocking, must run every loop)
     vacuum.updateSoftStart();
     brush.updateSoftStart();
@@ -71,7 +57,6 @@ void RobotController::update() {
         Serial.print(batteryInterval / 1000);
         Serial.println("s)");
         
->>>>>>> refactor-ui
         api.sendBattery(pct, volt);
 
         Serial.print("[BATTERY] ");
