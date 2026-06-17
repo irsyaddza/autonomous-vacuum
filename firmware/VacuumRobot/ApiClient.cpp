@@ -45,55 +45,49 @@ void ApiClient::connectWiFi() {
     const char* custom_css = R"(
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;500;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap');
         
         :root {
-            --primary: #4e73df;
-            --secondary: #8e44ad;
-            --bg-dark: #0f172a;
-            --glass: rgba(255, 255, 255, 0.05);
-            --border: rgba(255, 255, 255, 0.1);
+            --accent: #d4a054;
+            --accent-glow: rgba(212,160,84,0.3);
+            --bg: #0c0c0f;
+            --surface: rgba(255,255,255,0.04);
+            --border: rgba(255,255,255,0.08);
+            --text: #e8e4df;
+            --muted: #6b6560;
         }
 
         body {
-            background-color: var(--bg-dark);
-            color: #e0e0e0;
+            background-color: var(--bg);
+            color: var(--text);
             font-family: 'Outfit', 'Segoe UI', sans-serif;
             margin: 0;
-            min-height: 100vh;
+            min-height: 100dvh;
             display: flex;
             align-items: center;
             justify-content: center;
-            background: linear-gradient(-45deg, #0f172a, #1e293b, #250838, #0f172a);
-            background-size: 400% 400%;
-            animation: gradientBG 15s ease infinite;
         }
 
-        @keyframes gradientBG {
-            0% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-            100% { background-position: 0% 50%; }
-        }
 
         div, form { width: 100%; }
 
         .wrap {
-            background: var(--glass);
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
+            background: var(--surface);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
             border: 1px solid var(--border);
             border-radius: 20px;
             padding: 40px 30px;
-            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.04);
             max-width: 400px;
             width: 90%;
             margin: 20px auto;
-            animation: fadeIn 0.8s ease-out;
+            animation: fadeIn 0.6s ease-out;
             text-align: center;
         }
 
         @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(20px); }
+            from { opacity: 0; transform: translateY(16px); }
             to { opacity: 1; transform: translateY(0); }
         }
 
@@ -102,30 +96,29 @@ void ApiClient::connectWiFi() {
             font-weight: 700;
             font-size: 1.8rem;
             margin-bottom: 5px;
-            letter-spacing: 1px;
-            text-shadow: 0 0 20px rgba(78, 115, 223, 0.5);
+            letter-spacing: -0.5px;
         }
         
-        h3 { color: #a0aec0; font-weight: 300; font-size: 0.9rem; margin-top: 0; }
+        h3 { color: var(--muted); font-weight: 300; font-size: 0.9rem; margin-top: 0; }
 
         input {
             width: 100%;
             box-sizing: border-box;
-            background: rgba(0, 0, 0, 0.2);
+            background: rgba(255,255,255,0.03);
             border: 1px solid var(--border);
-            border-radius: 12px;
+            border-radius: 10px;
             padding: 15px;
-            color: white;
+            color: var(--text);
             font-size: 1rem;
+            font-family: 'Outfit', sans-serif;
             margin-bottom: 15px;
-            transition: all 0.3s ease;
+            transition: border-color 0.25s ease, box-shadow 0.25s ease;
         }
 
         input:focus {
             outline: none;
-            border-color: var(--primary);
-            box-shadow: 0 0 15px rgba(78, 115, 223, 0.3);
-            background: rgba(0, 0, 0, 0.4);
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px var(--accent-glow);
         }
 
         button {
@@ -136,46 +129,55 @@ void ApiClient::connectWiFi() {
             font-size: 1rem;
             font-weight: 600;
             cursor: pointer;
-            transition: all 0.3s ease;
-            text-transform: uppercase;
-            letter-spacing: 1px;
+            font-family: 'Outfit', sans-serif;
+            transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+            letter-spacing: 0.3px;
             margin-top: 10px;
             position: relative;
             overflow: hidden;
         }
 
         button[type='submit'] {
-            background: linear-gradient(90deg, var(--primary), var(--secondary));
-            color: white;
-            box-shadow: 0 4px 15px rgba(78, 115, 223, 0.4);
+            background: var(--accent);
+            color: #0c0c0f;
+            box-shadow: 0 4px 16px var(--accent-glow);
         }
 
         button[type='submit']:hover {
             transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(78, 115, 223, 0.6);
+            box-shadow: 0 8px 24px var(--accent-glow);
+        }
+
+        button[type='submit']:active {
+            transform: translateY(0) scale(0.98);
         }
 
         button:not([type='submit']) {
-            background: rgba(255, 255, 255, 0.1);
-            color: #fff;
+            background: rgba(255,255,255,0.06);
+            color: var(--text);
             border: 1px solid var(--border);
         }
 
         button:not([type='submit']):hover {
-            background: rgba(255, 255, 255, 0.2);
+            background: rgba(255,255,255,0.10);
+        }
+
+        button:not([type='submit']):active {
+            transform: scale(0.98);
         }
 
         div.c { text-align: left; }
         
-        div, a { color: #b0c4de; text-decoration: none; transition: 0.3s; }
-        a:hover { color: #fff; text-shadow: 0 0 10px white; }
+        div, a { color: var(--muted); text-decoration: none; transition: color 0.2s ease; }
+        a:hover { color: var(--text); }
 
         .q { float: right; }
         
         .footer {
             margin-top: 30px;
-            font-size: 0.8rem;
-            color: rgba(255,255,255,0.3);
+            font-size: 0.75rem;
+            color: rgba(255,255,255,0.2);
+            letter-spacing: 0.5px;
         }
     </style>
     <script>
@@ -621,39 +623,39 @@ void ApiClient::_handleFirmwarePage(WebServer* customServer) {
     html += "<title>Firmware Update - Vacuum Robot</title>";
     html += "<style>";
     html += "@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap');";
-    html += ":root{--primary:#4e73df;--secondary:#8e44ad;--glass:rgba(255,255,255,0.05);--border:rgba(255,255,255,0.10);--text:#e0e0e0;--muted:#64748b;}";
+    html += ":root{--accent:#d4a054;--accent-glow:rgba(212,160,84,0.3);--surface:rgba(255,255,255,0.04);--border:rgba(255,255,255,0.08);--text:#e8e4df;--muted:#6b6560;}";
     html += "*{box-sizing:border-box;margin:0;padding:0;}";
-    html += "body{background:linear-gradient(-45deg,#0f172a,#1e293b,#250838,#0f172a);background-size:400% 400%;animation:gradientBG 15s ease infinite;font-family:'Outfit',sans-serif;color:var(--text);min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;}";
-    html += "@keyframes gradientBG{0%,100%{background-position:0% 50%;}50%{background-position:100% 50%;}}";
-    html += ".card{background:var(--glass);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border:1px solid var(--border);border-radius:24px;padding:48px 40px;width:100%;max-width:480px;box-shadow:0 25px 50px rgba(0,0,0,0.5);animation:fadeUp 0.7s ease-out;text-align:center;}";
+    html += "body{background-color:#0c0c0f;font-family:'Outfit',sans-serif;color:var(--text);min-height:100dvh;display:flex;align-items:center;justify-content:center;padding:20px;}";
+    html += ".card{background:var(--surface);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border:1px solid var(--border);border-radius:24px;padding:48px 40px;width:100%;max-width:480px;box-shadow:0 25px 50px rgba(0,0,0,0.4),inset 0 1px 0 rgba(255,255,255,0.03);animation:fadeUp 0.7s ease-out;text-align:center;}";
     html += "@keyframes fadeUp{from{opacity:0;transform:translateY(30px);}to{opacity:1;transform:translateY(0);}}";
     html += ".robot-icon{font-size:4rem;display:block;margin-bottom:12px;animation:float 3s ease-in-out infinite;}";
     html += "@keyframes float{0%,100%{transform:translateY(0);}50%{transform:translateY(-8px);}}";
-    html += "h1{font-size:1.6rem;font-weight:700;color:#fff;letter-spacing:0.5px;text-shadow:0 0 20px rgba(78,115,223,0.6);}";
+    html += "h1{font-size:1.6rem;font-weight:700;color:#fff;letter-spacing:-0.3px;}";
     html += ".subtitle{color:var(--muted);font-size:0.85rem;margin-top:6px;margin-bottom:32px;}";
-    html += ".info-badge{display:inline-flex;align-items:center;gap:8px;background:rgba(78,115,223,0.15);border:1px solid rgba(78,115,223,0.3);border-radius:50px;padding:6px 16px;font-size:0.78rem;color:#93b4ff;margin-bottom:28px;}";
+    html += ".info-badge{display:inline-flex;align-items:center;gap:8px;background:rgba(212,160,84,0.1);border:1px solid rgba(212,160,84,0.25);border-radius:50px;padding:6px 16px;font-size:0.78rem;color:var(--accent);margin-bottom:28px;}";
     html += ".drop-zone{border:2px dashed var(--border);border-radius:16px;padding:36px 20px;cursor:pointer;transition:all 0.3s ease;position:relative;background:rgba(0,0,0,0.2);}";
-    html += ".drop-zone:hover,.drop-zone.drag-over{border-color:var(--primary);background:rgba(78,115,223,0.08);box-shadow:0 0 20px rgba(78,115,223,0.2);}";
+    html += ".drop-zone:hover,.drop-zone.drag-over{border-color:var(--accent);background:rgba(212,160,84,0.05);box-shadow:0 0 20px rgba(212,160,84,0.15);}";
     html += ".drop-zone input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;}";
     html += ".drop-icon{font-size:2.5rem;display:block;margin-bottom:10px;}";
     html += ".drop-text{font-size:0.95rem;color:var(--muted);}";
-    html += ".drop-text strong{color:#93b4ff;}";
-    html += ".file-info{display:none;margin-top:16px;background:rgba(46,204,113,0.1);border:1px solid rgba(46,204,113,0.3);border-radius:12px;padding:12px 16px;font-size:0.85rem;color:#7bed9f;text-align:left;}";
+    html += ".drop-text strong{color:var(--accent);}";
+    html += ".file-info{display:none;margin-top:16px;background:rgba(92,181,133,0.08);border:1px solid rgba(92,181,133,0.25);border-radius:12px;padding:12px 16px;font-size:0.85rem;color:#7bed9f;text-align:left;}";
     html += ".file-info.visible{display:flex;align-items:center;gap:10px;}";
     html += ".progress-wrap{display:none;margin-top:20px;}";
     html += ".progress-wrap.visible{display:block;}";
     html += ".progress-label{display:flex;justify-content:space-between;font-size:0.8rem;color:var(--muted);margin-bottom:8px;}";
-    html += ".progress-bar-bg{background:rgba(255,255,255,0.08);border-radius:50px;height:10px;overflow:hidden;}";
-    html += ".progress-bar-fill{height:100%;width:0%;background:linear-gradient(90deg,var(--primary),var(--secondary));border-radius:50px;transition:width 0.3s ease;box-shadow:0 0 10px rgba(78,115,223,0.5);}";
-    html += ".btn-upload{width:100%;margin-top:24px;padding:16px;border:none;border-radius:14px;background:linear-gradient(90deg,var(--primary),var(--secondary));color:#fff;font-family:'Outfit',sans-serif;font-size:1rem;font-weight:600;letter-spacing:0.5px;cursor:pointer;transition:all 0.3s ease;box-shadow:0 4px 20px rgba(78,115,223,0.4);}";
-    html += ".btn-upload:hover:not(:disabled){transform:translateY(-2px);box-shadow:0 8px 30px rgba(78,115,223,0.6);}";
+    html += ".progress-bar-bg{background:rgba(255,255,255,0.06);border-radius:50px;height:10px;overflow:hidden;}";
+    html += ".progress-bar-fill{height:100%;width:0%;background:var(--accent);border-radius:50px;transition:width 0.3s ease;box-shadow:0 0 10px rgba(212,160,84,0.4);}";
+    html += ".btn-upload{width:100%;margin-top:24px;padding:16px;border:none;border-radius:14px;background:var(--accent);color:#0c0c0f;font-family:'Outfit',sans-serif;font-size:1rem;font-weight:600;letter-spacing:0.3px;cursor:pointer;transition:transform 0.2s ease,box-shadow 0.2s ease;box-shadow:0 4px 20px rgba(212,160,84,0.3);}";
+    html += ".btn-upload:hover:not(:disabled){transform:translateY(-2px);box-shadow:0 8px 30px rgba(212,160,84,0.4);}";
+    html += ".btn-upload:active:not(:disabled){transform:translateY(0) scale(0.98);}";
     html += ".btn-upload:disabled{opacity:0.4;cursor:not-allowed;transform:none;}";
     html += ".status-msg{display:none;margin-top:16px;padding:14px 18px;border-radius:12px;font-size:0.9rem;font-weight:500;}";
-    html += ".status-msg.success{display:block;background:rgba(46,204,113,0.12);border:1px solid rgba(46,204,113,0.4);color:#7bed9f;}";
-    html += ".status-msg.error{display:block;background:rgba(231,76,60,0.12);border:1px solid rgba(231,76,60,0.4);color:#ff7675;}";
-    html += ".warning-box{margin-top:24px;padding:14px 16px;border-radius:12px;background:rgba(255,165,0,0.08);border:1px solid rgba(255,165,0,0.25);font-size:0.78rem;color:#fcd34d;text-align:left;line-height:1.6;}";
-    html += ".warning-box strong{color:#fbbf24;}";
-    html += ".footer{margin-top:28px;font-size:0.72rem;color:rgba(255,255,255,0.2);}";
+    html += ".status-msg.success{display:block;background:rgba(92,181,133,0.1);border:1px solid rgba(92,181,133,0.3);color:#7bed9f;}";
+    html += ".status-msg.error{display:block;background:rgba(196,92,92,0.1);border:1px solid rgba(196,92,92,0.3);color:#ff7675;}";
+    html += ".warning-box{margin-top:24px;padding:14px 16px;border-radius:12px;background:rgba(212,160,84,0.06);border:1px solid rgba(212,160,84,0.2);font-size:0.78rem;color:var(--accent);text-align:left;line-height:1.6;}";
+    html += ".warning-box strong{color:#e8b95a;}";
+    html += ".footer{margin-top:28px;font-size:0.72rem;color:rgba(255,255,255,0.2);letter-spacing:0.5px;}";
     html += "</style></head><body>";
     html += "<div class=\"card\">";
     html += "<span class=\"robot-icon\">&#x1F916;</span>";
@@ -884,17 +886,41 @@ void ApiClient::checkResetButton() {
     if (digitalRead(PIN_WIFI_RESET) == LOW) {
         unsigned long startPress = millis();
         bool longPress = false;
+        unsigned long lastBeepTime = 0;
         
         Serial.print("Reset Button Pressed. Hold for 5 seconds...");
         
         while (digitalRead(PIN_WIFI_RESET) == LOW) {
-            if (millis() - startPress > 5000) {
+            unsigned long elapsed = millis() - startPress;
+            
+            if (elapsed > 5000) {
                 longPress = true;
-                Serial.println(" REQUIRED TIME REACHED!");
+                Serial.println(" BOOM!");
                 break;
             }
-            delay(100);
-            Serial.print(".");
+            
+            // Countdown bomb: beeps accelerate as time runs out
+            // Phase 1 (0-1s): 1 beep/sec  |  Phase 2 (1-2s): 2 beeps/sec
+            // Phase 3 (2-3s): 3 beeps/sec |  Phase 4 (3-4s): 5 beeps/sec
+            // Phase 5 (4-5s): 8 beeps/sec (rapid ticking)
+            int interval;
+            int beepLen;
+            if (elapsed < 1000)       { interval = 1000; beepLen = 120; }
+            else if (elapsed < 2000)  { interval = 500;  beepLen = 100; }
+            else if (elapsed < 3000)  { interval = 333;  beepLen = 80; }
+            else if (elapsed < 4000)  { interval = 200;  beepLen = 50; }
+            else                      { interval = 125;  beepLen = 30; }
+            
+            // Pitch rises with urgency
+            int pitch = 800 + (elapsed / 5);  // 800Hz → 1800Hz
+            
+            if (millis() - lastBeepTime >= (unsigned long)interval) {
+                lastBeepTime = millis();
+                tone(PIN_BUZZER, pitch, beepLen);
+                Serial.print("tick ");
+            }
+            
+            delay(10);
         }
         
         if (longPress) {
@@ -908,7 +934,8 @@ void ApiClient::checkResetButton() {
             delay(500);
             ESP.restart();
         } else {
-             Serial.println("\nButton released too early. Cancelled.");
+            noTone(PIN_BUZZER);
+            Serial.println("\nButton released too early. Cancelled.");
         }
     }
 }
@@ -922,21 +949,34 @@ void ApiClient::initBuzzer() {
 }
 
 void ApiClient::playWiFiResetBeep() {
-    Serial.println("Playing WiFi reset beep...");
+    Serial.println("Playing bomb explosion sound...");
     
-    for (int i = 0; i < 3; i++) {
-        digitalWrite(PIN_BUZZER, HIGH);
-        delay(150);
-        digitalWrite(PIN_BUZZER, LOW);
-        delay(100);
+    // BOOM: loud low-frequency burst
+    tone(PIN_BUZZER, 150);
+    delay(300);
+    
+    // Descending explosion sweep
+    for (int f = 150; f > 30; f -= 5) {
+        tone(PIN_BUZZER, f);
+        delay(15);
     }
+    noTone(PIN_BUZZER);
+    delay(100);
     
-    delay(200);
-    digitalWrite(PIN_BUZZER, HIGH);
-    delay(500);
-    digitalWrite(PIN_BUZZER, LOW);
+    // Crackle / debris: rapid noise bursts
+    for (int i = 0; i < 8; i++) {
+        tone(PIN_BUZZER, random(200, 800), 25);
+        delay(random(30, 70));
+    }
+    noTone(PIN_BUZZER);
+    delay(80);
     
-    Serial.println("Beep complete!");
+    // Final low boom
+    tone(PIN_BUZZER, 60);
+    delay(400);
+    noTone(PIN_BUZZER);
+    
+    Serial.println("Explosion complete!");
 }
 
 // ===== POWER MANAGEMENT WEB =====
@@ -948,29 +988,31 @@ void ApiClient::_handlePowerPage(WebServer* customServer) {
     html += "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">";
     html += "<title>Power Management - Vacuum</title>";
     html += "<style>";
-    html += "@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');";
-    html += ":root{--primary:#3b82f6;--success:#10b981;--warning:#f59e0b;--danger:#ef4444;--bg:#f8fafc;--card:#ffffff;--text:#1e293b;--text-light:#64748b;--border:#e2e8f0;}";
-    html += "*{box-sizing:border-box;margin:0;padding:0;font-family:'Inter',sans-serif;}";
-    html += "body{background-color:var(--bg);color:var(--text);line-height:1.5;padding:20px;}";
-    html += ".container{max-width:600px;margin:0 auto;}";
+    html += "@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap');";
+    html += ":root{--accent:#d4a054;--accent-glow:rgba(212,160,84,0.25);--success:#5cb585;--warning:#d4a054;--danger:#c45c5c;--bg:#0c0c0f;--card:rgba(255,255,255,0.04);--text:#e8e4df;--text-light:#6b6560;--border:rgba(255,255,255,0.08);}";
+    html += "*{box-sizing:border-box;margin:0;padding:0;font-family:'Outfit',sans-serif;}";
+    html += "body{background-color:var(--bg);color:var(--text);line-height:1.5;padding:20px;min-height:100dvh;}";
+    html += ".container{max-width:600px;margin:0 auto;animation:fadeUp 0.6s ease-out;}";
+    html += "@keyframes fadeUp{from{opacity:0;transform:translateY(20px);}to{opacity:1;transform:translateY(0);}}";
     html += ".header{text-align:center;margin-bottom:30px;}";
-    html += ".header h1{font-size:1.5rem;font-weight:700;color:var(--text);margin-bottom:5px;}";
+    html += ".header h1{font-size:1.5rem;font-weight:700;color:#fff;margin-bottom:5px;letter-spacing:-0.3px;}";
     html += ".header p{color:var(--text-light);font-size:0.9rem;}";
-    html += ".card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:20px;margin-bottom:20px;box-shadow:0 4px 6px -1px rgba(0,0,0,0.05);}";
+    html += ".card{background:var(--card);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border:1px solid var(--border);border-radius:16px;padding:20px;margin-bottom:20px;box-shadow:0 4px 24px rgba(0,0,0,0.3),inset 0 1px 0 rgba(255,255,255,0.03);transition:box-shadow 0.3s ease;}";
+    html += ".card:hover{box-shadow:0 8px 32px rgba(0,0,0,0.4),inset 0 1px 0 rgba(255,255,255,0.03);}";
     html += ".grid{display:grid;grid-template-columns:1fr 1fr;gap:15px;}";
     html += ".data-item{display:flex;flex-direction:column;}";
-    html += ".data-label{font-size:0.8rem;color:var(--text-light);text-transform:uppercase;letter-spacing:0.5px;font-weight:600;margin-bottom:4px;}";
-    html += ".data-value{font-size:1.25rem;font-weight:700;color:var(--text);}";
-    html += ".data-value.large{font-size:2.5rem;color:var(--primary);}";
+    html += ".data-label{font-size:0.75rem;color:var(--text-light);text-transform:uppercase;letter-spacing:0.5px;font-weight:600;margin-bottom:4px;}";
+    html += ".data-value{font-size:1.25rem;font-weight:700;color:var(--text);font-variant-numeric:tabular-nums;}";
+    html += ".data-value.large{font-size:2.5rem;color:var(--accent);}";
     html += ".badge{display:inline-block;padding:4px 10px;border-radius:999px;font-size:0.75rem;font-weight:600;}";
-    html += ".badge-success{background:rgba(16,185,129,0.1);color:var(--success);}";
-    html += ".badge-warning{background:rgba(245,158,11,0.1);color:var(--warning);}";
-    html += ".badge-danger{background:rgba(239,68,68,0.1);color:var(--danger);}";
-    html += ".badge-neutral{background:var(--bg);color:var(--text-light);}";
-    html += ".progress-container{width:100%;background:var(--border);border-radius:999px;height:12px;margin-top:10px;overflow:hidden;}";
-    html += ".progress-bar{height:100%;background:var(--primary);border-radius:999px;transition:width 0.5s ease, background-color 0.5s ease;}";
-    html += ".footer{text-align:center;font-size:0.8rem;color:var(--text-light);margin-top:30px;}";
-    html += ".sync-card{background:#f8fafc;border:1px dashed #cbd5e1;}";
+    html += ".badge-success{background:rgba(92,181,133,0.12);color:var(--success);}";
+    html += ".badge-warning{background:rgba(212,160,84,0.12);color:var(--warning);}";
+    html += ".badge-danger{background:rgba(196,92,92,0.12);color:var(--danger);}";
+    html += ".badge-neutral{background:rgba(255,255,255,0.05);color:var(--text-light);}";
+    html += ".progress-container{width:100%;background:rgba(255,255,255,0.06);border-radius:999px;height:12px;margin-top:10px;overflow:hidden;}";
+    html += ".progress-bar{height:100%;background:var(--accent);border-radius:999px;transition:width 0.5s ease,background-color 0.5s ease;box-shadow:0 0 8px var(--accent-glow);}";
+    html += ".footer{text-align:center;font-size:0.75rem;color:rgba(255,255,255,0.2);margin-top:30px;letter-spacing:0.5px;}";
+    html += ".sync-card{background:rgba(255,255,255,0.02);border:1px dashed rgba(255,255,255,0.08);}";
     html += "@media (max-width:480px){.grid{grid-template-columns:1fr;}}";
     html += "</style></head><body>";
     html += "<div class=\"container\">";
