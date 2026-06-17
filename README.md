@@ -90,7 +90,7 @@ The robot moves in an expanding spiral pattern, then switches to random bounce n
 ### Web server
 
 ```bash
-git clone https://github.com/irsyaddza/autonomous-vacuum
+git clone https://github.com/irsyaddza/autonomous-vacuum.git
 cd autonomous-vacuum
 
 composer install
