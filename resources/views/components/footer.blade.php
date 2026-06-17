@@ -3,8 +3,7 @@
         <div class="d-flex flex-column flex-md-row align-items-center justify-content-between gap-3">
             <small class="text-secondary">&copy; {{ date('Y') }} Autonomous Vacuum. All rights reserved.</small>
             <nav class="d-flex gap-3">
-                <a href="/">Dashboard</a>
-                <a href="/diagnostic">Diagnostic</a>
+                <a href="https://github.com/irsyaddza/autonomous-vacuum">Github</a>
                 <a href="/about">About</a>
             </nav>
         </div>
