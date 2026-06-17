@@ -44,66 +44,46 @@ void setup() {
     // HARDWARE INIT
     // =========================================
 
-    brush.begin();
-    vacuum.begin();
-    wheels.begin();
+  // Apply NVS wheel speeds to motors (overrides config.h defaults)
+  wheels.setLeftSpeed(timing.leftWheelSpeed);
+  wheels.setRightSpeed(timing.rightWheelSpeed);
+
+  // Start Direct HTTP Server (receives commands from browser)
+  api.startWebServer();
 
     sensors.begin();
     battery.begin();
     timing.load();
 
-    // =========================================
-    // WIFI & API
-    // =========================================
-
-    api.connectWiFi();
-
-    api.startWebServer();
-
-    api.registerDevice();
-
-    // =========================================
-    // ROBOT LOGIC
-    // =========================================
-
-    robot.begin();
-
-    // =========================================
-    // READY
-    // =========================================
-
-    Serial.println("\n=================================");
-    Serial.println(" ROBOT READY ");
-    Serial.println("=================================");
-
-    Serial.print("IP Address : ");
-    Serial.println(WiFi.localIP());
-
-    Serial.print("Firmware   : ");
-    Serial.println(FIRMWARE_VERSION);
-
-    Serial.print("HTTP Port  : ");
-    Serial.println(ESP32_HTTP_PORT);
-
-    Serial.println("\nFeatures:");
-    Serial.println("- Autonomous Cleaning");
-    Serial.println("- Left Wall Following");
-    Serial.println("- Obstacle Avoidance");
-    Serial.println("- Cliff Detection");
-    Serial.println("- Anti-loop Navigation");
-
-    Serial.println("=================================\n");
+  // Initialize Logic
+  robot.begin();
+  
+  Serial.println("\n=== ROBOT READY (Direct HTTP Mode) ===");
+  Serial.println("Motor Configuration:");
+  Serial.println("  - Motor Driver 1: Brush (OUT1/2) + Vacuum (OUT3/4)");
+  Serial.println("  - Motor Driver 2: Wheel Motors (LEFT + RIGHT)");
+  Serial.print("Direct HTTP Server: Port ");
+  Serial.println(ESP32_HTTP_PORT);
+  Serial.print("Device IP: ");
+  Serial.println(WiFi.localIP());
+  Serial.print("Firmware: v");
+  Serial.println(FIRMWARE_VERSION);
+  Serial.println("Commands: POST /command, GET /status");
+  Serial.println("Battery report: every " + String(BATTERY_SEND_INTERVAL / 1000) + "s (active), " + String(BATTERY_SEND_INTERVAL_IDLE / 1000) + "s (idle)");
+  Serial.println("==========================================\n");
 }
 
-// =====================================================
-// LOOP
-// =====================================================
-
 void loop() {
-
-    robot.update();
-
-    api.update();
-
-    delay(10);
+  // Update all subsystems
+  // RobotController handles: motor control, battery reporting, battery protection
+  // ApiClient handles: WebServer (incoming HTTP), device registration, reset button
+  robot.update();
+  api.update();
+  
+  // Adaptive delay: save power when idle, responsive when active
+  if (api.lastState == "working") {
+    delay(ACTIVE_LOOP_DELAY);
+  } else {
+    delay(IDLE_LOOP_DELAY);
+  }
 }

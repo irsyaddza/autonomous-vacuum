@@ -52,16 +52,24 @@ float BatteryMonitor::getVoltage() {
         return _stableVoltage;
     }
     
+    static unsigned long lastUpdate = 0;
+    unsigned long now = millis();
+    
     if (currentReading >= _stableVoltage) {
         // Tegangan naik atau sama → langsung adopt
         // Ini terjadi saat motor mati dan baterai pulih ke OCV
         _stableVoltage = currentReading;
+        lastUpdate = now;
     } else {
         // Tegangan lebih rendah (sag karena motor)
-        // → Turunkan perlahan, jangan langsung ikut turun
-        // Formula: stable = stable * (1 - rate) + reading * rate
-        _stableVoltage = _stableVoltage * (1.0 - BATTERY_DECAY_RATE) 
-                       + currentReading * BATTERY_DECAY_RATE;
+        // → Turunkan perlahan, JANGAN ikut turun secara instan
+        // Gunakan interval 1 detik agar tidak terpengaruh oleh seberapa sering fungsi ini dipanggil
+        if (now - lastUpdate >= 1000) {
+            // Formula: stable = stable * (1 - rate) + reading * rate
+            _stableVoltage = _stableVoltage * (1.0 - BATTERY_DECAY_RATE) 
+                           + currentReading * BATTERY_DECAY_RATE;
+            lastUpdate = now;
+        }
     }
     
     return _stableVoltage;

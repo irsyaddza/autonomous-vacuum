@@ -21,12 +21,6 @@ class BatteryLogSeeder extends Seeder
         
         $batteryData = [
             ['percent' => 100, 'voltage' => 12.60, 'time' => $baseTime->copy()->addMinutes(0)],
-            ['percent' => 98, 'voltage' => 12.55, 'time' => $baseTime->copy()->addMinutes(10)],
-            ['percent' => 96, 'voltage' => 12.50, 'time' => $baseTime->copy()->addMinutes(20)],
-            ['percent' => 94, 'voltage' => 12.45, 'time' => $baseTime->copy()->addMinutes(30)],
-            ['percent' => 92, 'voltage' => 12.40, 'time' => $baseTime->copy()->addMinutes(40)],
-            ['percent' => 90, 'voltage' => 12.35, 'time' => $baseTime->copy()->addMinutes(50)],
-            ['percent' => 85, 'voltage' => 12.25, 'time' => $baseTime->copy()->addMinutes(60)],
         ];
         
         foreach ($batteryData as $data) {

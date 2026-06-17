@@ -31,6 +31,10 @@ class VacuumAPIController extends Controller
                 'estimated_time' => $validated['estimated_time'] ?? null
             ]);
 
+            // Auto-cleanup: hapus battery logs lebih dari 24 jam
+            // Mencegah table bloat (sebelumnya ~2880 row/hari)
+            BatteryLog::where('created_at', '<', now()->subHours(24))->delete();
+
             return response()->json([
                 'success' => true,
                 'message' => 'Battery data received',
@@ -385,4 +389,29 @@ class VacuumAPIController extends Controller
             ], 500);
         }
     }
+<<<<<<< HEAD
+=======
+
+    /**
+     * POST /v1/vacuum/reset-devices
+     * Clear all ESP32 devices from database to allow clean reconnect
+     */
+    public function resetDevices()
+    {
+        try {
+            Esp32Device::truncate();
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'All ESP32 devices have been cleared from database. Please connect your robot to the network again.'
+            ], 200);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+>>>>>>> refactor-ui
 }

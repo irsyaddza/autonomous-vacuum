@@ -15,9 +15,12 @@ void TimingSettings::load() {
     spiralIncrement = timingPrefs.getInt("spiralInc", SPIRAL_INCREMENT);
     spiralMaxDuration = timingPrefs.getInt("spiralMax", SPIRAL_MAX_DURATION);
     spiralTurnDuration = timingPrefs.getInt("spiralTurn", SPIRAL_TURN_DURATION);
+    respiralIdleTime = timingPrefs.getInt("respiralIdle", RESPIRAL_IDLE_TIME);
     stuckObstacleCount = timingPrefs.getInt("stuckCount", STUCK_OBSTACLE_COUNT);
     stuckTimeWindow = timingPrefs.getInt("stuckTime", STUCK_TIME_WINDOW);
     escapeTurnDuration = timingPrefs.getInt("escapeTurn", ESCAPE_TURN_DURATION);
+    leftWheelSpeed = timingPrefs.getInt("leftWheelSpd", WHEEL_LEFT_SPEED);
+    rightWheelSpeed = timingPrefs.getInt("rightWheelSpd", WHEEL_RIGHT_SPEED);
     timingPrefs.end();
 }
 
@@ -33,8 +36,11 @@ void TimingSettings::save() {
     timingPrefs.putInt("spiralInc", spiralIncrement);
     timingPrefs.putInt("spiralMax", spiralMaxDuration);
     timingPrefs.putInt("spiralTurn", spiralTurnDuration);
+    timingPrefs.putInt("respiralIdle", respiralIdleTime);
     timingPrefs.putInt("stuckCount", stuckObstacleCount);
     timingPrefs.putInt("stuckTime", stuckTimeWindow);
     timingPrefs.putInt("escapeTurn", escapeTurnDuration);
+    timingPrefs.putInt("leftWheelSpd", leftWheelSpeed);
+    timingPrefs.putInt("rightWheelSpd", rightWheelSpeed);
     timingPrefs.end();
 }
