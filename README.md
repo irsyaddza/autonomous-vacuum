@@ -90,8 +90,8 @@ The robot moves in an expanding spiral pattern, then switches to random bounce n
 ### Web server
 
 ```bash
-git clone <your-repo-url>
-cd autonomous_vacuum
+git clone https://github.com/irsyaddza/autonomous-vacuum
+cd autonomous-vacuum
 
 composer install
 
@@ -100,15 +100,15 @@ php artisan key:generate
 
 # Edit .env with your MySQL credentials, then:
 php artisan migrate --seed
-php artisan serve
+php artisan serve --host=0.0.0.0
 ```
 
-Dashboard is at `http://localhost:8000`.
+Dashboard is at `http://localhost:8000` or `http://your-ip:8000`.
 
 ### ESP32 firmware
 
 1. Open `firmware/VacuumRobot/VacuumRobot.ino` in Arduino IDE
-2. Edit `config.h` — set your WiFi SSID, password, and Laravel API URL
+2. Edit `config.h` — set esp32's WiFi SSID, password, or keep it default, and change your Laravel API URL
 3. Upload to ESP32
 4. On first boot, connect to the "VacuumRobot" WiFi AP to register the device
 
@@ -143,14 +143,15 @@ php artisan firmware:compile --port COM3
 
 | Component | ESP32 GPIO |
 |-----------|------------|
-| IR obstacle left | 16 |
-| IR obstacle front | 17 |
+| IR obstacle left | 33 |
+| IR obstacle front | 34 |
 | IR obstacle right | 18 |
 | IR cliff left | 19 |
 | IR cliff front | 21 |
 | IR cliff right | 22 |
 | Battery ADC (voltage divider) | 36 (VP) |
-| WiFi reset button | 0 (BOOT) |
+| WiFi reset button | 4 |
+| Buzzer | 27 |
 
 ---
 
