@@ -389,6 +389,8 @@ class VacuumAPIController extends Controller
             ], 500);
         }
     }
+<<<<<<< HEAD
+=======
 
     /**
      * POST /v1/vacuum/reset-devices
@@ -411,4 +413,5 @@ class VacuumAPIController extends Controller
             ], 500);
         }
     }
+>>>>>>> refactor-ui
 }

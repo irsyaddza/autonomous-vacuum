@@ -1,20 +1,23 @@
 #include "WheelMotor.h"
 #include "config.h"
 
-// PWM Configuration for ESP32 LEDC
-const int WHEEL_PWM_FREQ = 5000;      // 5kHz
-const int WHEEL_PWM_RESOLUTION = 8;   // 8-bit (0-255)
+// PWM CONFIG
+const int WHEEL_PWM_FREQ = 5000;
+const int WHEEL_PWM_RESOLUTION = 8;
 
 void WheelMotor::begin() {
-    // Setup all wheel motor pins
+
+    // Setup pin
     pinMode(PIN_WHEEL_LEFT_FWD, OUTPUT);
     pinMode(PIN_WHEEL_LEFT_REV, OUTPUT);
+
     pinMode(PIN_WHEEL_RIGHT_FWD, OUTPUT);
     pinMode(PIN_WHEEL_RIGHT_REV, OUTPUT);
-    
-    // Setup LEDC PWM for ESP32 - all 4 pins
+
+    // Attach PWM
     ledcAttach(PIN_WHEEL_LEFT_FWD, WHEEL_PWM_FREQ, WHEEL_PWM_RESOLUTION);
     ledcAttach(PIN_WHEEL_LEFT_REV, WHEEL_PWM_FREQ, WHEEL_PWM_RESOLUTION);
+
     ledcAttach(PIN_WHEEL_RIGHT_FWD, WHEEL_PWM_FREQ, WHEEL_PWM_RESOLUTION);
     ledcAttach(PIN_WHEEL_RIGHT_REV, WHEEL_PWM_FREQ, WHEEL_PWM_RESOLUTION);
     
@@ -81,12 +84,20 @@ void WheelMotor::setRightSpeed(int pwm) {
     Serial.println(_rightSpeed);
 }
 
+// =====================================================
+// FORWARD
+// =====================================================
+
 void WheelMotor::moveForward() {
     ledcWrite(PIN_WHEEL_LEFT_FWD, _leftSpeed);
     ledcWrite(PIN_WHEEL_LEFT_REV, 0);
     ledcWrite(PIN_WHEEL_RIGHT_FWD, _rightSpeed);
     ledcWrite(PIN_WHEEL_RIGHT_REV, 0);
 }
+
+// =====================================================
+// BACKWARD
+// =====================================================
 
 void WheelMotor::moveBackward() {
     ledcWrite(PIN_WHEEL_LEFT_FWD, 0);
@@ -95,6 +106,10 @@ void WheelMotor::moveBackward() {
     ledcWrite(PIN_WHEEL_RIGHT_REV, _rightSpeed);
 }
 
+// =====================================================
+// TURN LEFT
+// =====================================================
+
 void WheelMotor::turnLeft() {
     ledcWrite(PIN_WHEEL_LEFT_FWD, 0);
     ledcWrite(PIN_WHEEL_LEFT_REV, _leftSpeed);
@@ -102,16 +117,27 @@ void WheelMotor::turnLeft() {
     ledcWrite(PIN_WHEEL_RIGHT_REV, 0);
 }
 
+// =====================================================
+// TURN RIGHT
+// =====================================================
+
 void WheelMotor::turnRight() {
     ledcWrite(PIN_WHEEL_LEFT_FWD, _leftSpeed);
     ledcWrite(PIN_WHEEL_LEFT_REV, 0);
+
     ledcWrite(PIN_WHEEL_RIGHT_FWD, 0);
     ledcWrite(PIN_WHEEL_RIGHT_REV, _rightSpeed);
 }
 
+// =====================================================
+// STOP
+// =====================================================
+
 void WheelMotor::stop() {
+
     ledcWrite(PIN_WHEEL_LEFT_FWD, 0);
     ledcWrite(PIN_WHEEL_LEFT_REV, 0);
+
     ledcWrite(PIN_WHEEL_RIGHT_FWD, 0);
     ledcWrite(PIN_WHEEL_RIGHT_REV, 0);
 }

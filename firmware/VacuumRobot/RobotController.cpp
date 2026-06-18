@@ -1,4 +1,5 @@
 #include "RobotController.h"
+
 #include "config.h"
 #include "BrushMotor.h"
 #include "VacuumMotor.h"
@@ -7,7 +8,10 @@
 #include "BatteryMonitor.h"
 #include "ApiClient.h"
 
-// External objects
+// =====================================================
+// EXTERNAL OBJECTS
+// =====================================================
+
 extern BrushMotor brush;
 extern VacuumMotor vacuum;
 extern WheelMotor wheels;
@@ -15,11 +19,20 @@ extern SensorArray sensors;
 extern BatteryMonitor battery;
 extern ApiClient api;
 
+// =====================================================
+// BEGIN
+// =====================================================
+
 void RobotController::begin() {
-    _cleaner.begin();
-    Serial.println("[ROBOT] Controller initialized - Manual + Autonomous modes");
+
+    Serial.println("[ROBOT] Controller initialized");
+
     stopAll();
 }
+
+// =====================================================
+// MAIN UPDATE
+// =====================================================
 
 void RobotController::update() {
     // Update soft start ramping (non-blocking, must run every loop)
@@ -45,199 +58,212 @@ void RobotController::update() {
         Serial.println("s)");
         
         api.sendBattery(pct, volt);
+
+        Serial.print("[BATTERY] ");
+        Serial.print(pct);
+        Serial.print("% | ");
+        Serial.println(volt);
     }
 
-    // 2. Read state from API
+    // =========================================
+    // Read Sensor
+    // =========================================
+
+    sensors.readObstacles();
+    sensors.readCliffs();
+
+    // =========================================
+    // API State
+    // =========================================
+
     String targetState = api.lastState;
-    int targetPower = api.lastPowerValue;
-    String direction = api.lastDirection;
-    
-    // ===== BATTERY PROTECTION =====
-    // Only check when robot is actively working
-    if (targetState == "working") {
-        int pct = battery.getPercentage();
-        float volt = battery.getVoltage();
-        
-        // CRITICAL: Auto-stop at 0% battery
-        if (battery.isCritical() && !_autoStopped) {
-            _autoStopped = true;
-            
-            Serial.println("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
-            Serial.println("[ROBOT] BATTERY CRITICAL (0%) - AUTO STOPPING!");
-            Serial.print("[ROBOT] Voltage: ");
-            Serial.print(volt);
-            Serial.print("V, Percent: ");
-            Serial.print(pct);
-            Serial.println("%");
-            Serial.println("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
-            
-            // Stop everything
-            if (_wasAutonomous) {
-                _cleaner.stop();
-                _wasAutonomous = false;
-            }
-            stopAll();
-            
-            // Notify server
-            api.sendAutoStop(pct, volt);
-            
-            return;  // Skip all motor control
-        }
-        
-        // WARNING: Low battery at 15%
-        if (battery.isLowBattery() && !_lowBatteryWarned) {
-            _lowBatteryWarned = true;
-            
-            Serial.println("==========================================");
-            Serial.print("[ROBOT] LOW BATTERY WARNING! ");
-            Serial.print(pct);
-            Serial.print("% (");
-            Serial.print(volt);
-            Serial.println("V)");
-            Serial.println("==========================================");
-            
-            // Send warning event to server
-            api.sendBatteryEvent("low_battery_warning", pct, volt);
-        }
-    }
-    
-    // Reset battery flags when not working (charged/recovered)
-    if (targetState != "working") {
-        if (_autoStopped && battery.getPercentage() > BATTERY_BLOCK_START_PCT) {
-            _autoStopped = false;
-            _lowBatteryWarned = false;
-            Serial.println("[ROBOT] Battery recovered - protection flags reset");
-        }
-    }
-    // ===== END BATTERY PROTECTION =====
-    
-    // Log state changes
+
+    // =========================================
+    // State Change Log
+    // =========================================
+
     if (targetState != _prevState) {
-        Serial.print("[ROBOT] State changed: '");
+
+        Serial.print("[ROBOT] State: ");
         Serial.print(_prevState);
-        Serial.print("' -> '");
-        Serial.print(targetState);
-        Serial.println("'");
+        Serial.print(" -> ");
+        Serial.println(targetState);
+
         _prevState = targetState;
     }
-    
-    // Log power changes
-    if (targetPower != _prevPowerValue) {
-        Serial.print("[ROBOT] Power changed: ");
-        Serial.print(_prevPowerValue);
-        Serial.print(" -> ");
-        Serial.println(targetPower);
-        _prevPowerValue = targetPower;
+
+    // =========================================
+    // LOW BATTERY AUTO STOP
+    // =========================================
+
+    if (battery.getPercentage() <= LOW_BATTERY_PERCENT) {
+
+        api.lastState = "idle";
+
+        Serial.println("[ROBOT] LOW BATTERY -> IDLE");
+
+        stopAll();
+
+        return;
     }
 
-    // 3. MAIN LOGIC
+    // =========================================
+    // MAIN STATE MACHINE
+    // =========================================
+
     if (targetState == "working") {
-        
-        // Set vacuum power dari website
-        vacuum.setPower(targetPower);
-        
-        // Start brush motor
-        brush.forward();
-        
-        // === MODE SELECTION ===
-        if (direction == "autonomous") {
-            // ==============================
-            // MODE AUTONOMOUS (Random Bounce + Spiral)
-            // ==============================
-            if (!_wasAutonomous) {
-                Serial.println("==================");
-                Serial.println("[ROBOT] MODE = AUTONOMOUS CLEANING");
-                Serial.print("[ROBOT] Vacuum Power = ");
-                Serial.println(targetPower);
-                Serial.println("==================");
-                _cleaner.start();
-                _wasAutonomous = true;
-            }
-            
-            // Update cleaning algorithm (handles sensors + wheel control)
-            _cleaner.update();
-            
-        } else {
-            // ==============================
-            // MODE MANUAL (dikontrol dari website)
-            // ==============================
-            if (_wasAutonomous) {
-                // Baru pindah dari autonomous ke manual
-                _cleaner.stop();
-                _wasAutonomous = false;
-                Serial.println("[ROBOT] Switched from AUTONOMOUS to MANUAL");
-            }
-            
-            // === SAFETY: Cliff check di mode manual juga ===
-            sensors.readCliffs();
-            if (sensors.isCliffDetected()) {
-                Serial.println("!!! [ROBOT] CLIFF DETECTED IN MANUAL MODE - STOPPING !!!");
-                wheels.stop();
-                return;  // Jangan gerak sampai cliff hilang
-            }
-            
-            // Manual direction control
-            static bool wasWorking = false;
-            if (!wasWorking) {
-                Serial.println("==================");
-                Serial.println("[ROBOT] MODE = MANUAL CONTROL");
-                Serial.print("[ROBOT] Direction = '");
-                Serial.print(direction);
-                Serial.println("'");
-                Serial.println("==================");
-                wasWorking = true;
-            }
-            
-            if (direction == "backward") {
-                wheels.moveBackward();
-            } else if (direction == "left") {
-                wheels.turnLeft();
-            } else if (direction == "right") {
-                wheels.turnRight();
-            } else if (direction == "stop") {
-                wheels.stop();
-            } else {
-                // Default: forward
-                wheels.moveForward();
-            }
-        }
-        
-    } else {
-        // ANY other state -> STOP everything
-        static bool loggedStop = false;
-        static String lastLoggedState = "";
-        if (!loggedStop || lastLoggedState != targetState) {
-            Serial.print("[ROBOT] STATE=");
-            Serial.print(targetState);
-            Serial.println(" -> ALL MOTORS STOP");
-            loggedStop = true;
-            lastLoggedState = targetState;
-        }
-        
-        // Stop autonomous if it was running
-        if (_wasAutonomous) {
-            _cleaner.stop();
-            _wasAutonomous = false;
-        }
-        
+
+        handleCleaning();
+    }
+    else {
+
         stopAll();
     }
 }
 
+// =====================================================
+// CLEANING MODE
+// =====================================================
+
+void RobotController::handleCleaning() {
+
+    brush.forward();
+    vacuum.setPower(api.lastPowerValue);
+
+    // =========================================
+    // CLIFF SAFETY
+    // =========================================
+
+    if (sensors.isCliffDetected()) {
+
+        Serial.println("[SAFETY] CLIFF DETECTED");
+
+        wheels.moveBackward();
+        delay(BACKWARD_DELAY);
+
+        // Belok menjauhi sisi cliff yang terdeteksi
+        if (sensors.isCliffLeft()) {
+
+            wheels.turnRight();
+            Serial.println("[SAFETY] Cliff kiri -> belok kanan");
+        }
+        else if (sensors.isCliffRight()) {
+
+            wheels.turnLeft();
+            Serial.println("[SAFETY] Cliff kanan -> belok kiri");
+        }
+        else {
+
+            // Cliff depan -> belok kanan default
+            wheels.turnRight();
+            Serial.println("[SAFETY] Cliff depan -> belok kanan");
+        }
+
+        delay(TURN_DELAY);
+        wheels.stop();
+
+        return;
+    }
+
+    // =========================================
+    // FRONT BLOCKED
+    // =========================================
+
+    if (sensors.isFrontBlocked()) {
+
+        Serial.println("[NAVIGATION] FRONT BLOCKED");
+
+        wheels.moveBackward();
+        delay(BACKWARD_DELAY);
+
+        // Anti-loop timer
+        if (_loopStartTime == 0) {
+            _loopStartTime = millis();
+        }
+
+        // Trigger escape mode
+        if (millis() - _loopStartTime > LOOP_TIMEOUT) {
+
+            Serial.println("[ANTI-LOOP] ESCAPE MODE");
+
+            _escapeMode = true;
+        }
+
+        if (_escapeMode) {
+
+            // Alternating kiri-kanan
+            if (_escapeToggle) {
+
+                wheels.turnLeft();
+                Serial.println("[ANTI-LOOP] Escape -> KIRI");
+            }
+            else {
+
+                wheels.turnRight();
+                Serial.println("[ANTI-LOOP] Escape -> KANAN");
+            }
+
+            _escapeToggle  = !_escapeToggle;
+            _escapeMode    = false;
+            _loopStartTime = 0;
+
+            delay(ESCAPE_DELAY);
+        }
+        else {
+
+            // Normal turn: hindari sisi yang terblokir
+            if (sensors.isLeftBlocked() && !sensors.isRightBlocked()) {
+
+                wheels.turnRight();
+                Serial.println("[NAVIGATION] Obs kiri -> belok kanan");
+            }
+            else if (sensors.isRightBlocked() && !sensors.isLeftBlocked()) {
+
+                wheels.turnLeft();
+                Serial.println("[NAVIGATION] Obs kanan -> belok kiri");
+            }
+            else {
+
+                // Kedua sisi blokir atau kosong -> ikut wall following (kiri)
+                wheels.turnLeft();
+                Serial.println("[NAVIGATION] Default -> belok kiri");
+            }
+
+            delay(TURN_DELAY);
+        }
+
+        return;
+    }
+
+    // =========================================
+    // WALL FOLLOWING (LEFT)
+    // =========================================
+
+    if (sensors.isLeftBlocked()) {
+
+        // Dinding kiri terdeteksi -> tetap sejajar, sedikit geser kanan
+        wheels.turnRight();
+        delay(100);
+    }
+    else {
+
+        // Tidak ada dinding kiri -> maju
+        wheels.moveForward();
+    }
+
+    // Reset loop timer saat jalan normal
+    _loopStartTime = 0;
+}
+
+// =====================================================
+// STOP ALL
+// =====================================================
+
 void RobotController::stopAll() {
+
     wheels.stop();
     brush.stop();
     vacuum.stop();
-}
 
-void RobotController::handleCleaning() {
-    // Handled by CleaningAlgorithm
-}
-
-void RobotController::handleReturning() {
-    // Not used - no position tracking available
-}
-
-void RobotController::checkSafety() {
-    // Cliff safety is handled inline in update() and by CleaningAlgorithm
+    Serial.println("[ROBOT] STOP ALL");
 }
