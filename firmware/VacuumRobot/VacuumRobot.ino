@@ -1,48 +1,40 @@
 #include <Arduino.h>
-
 #include "config.h"
-
 #include "BrushMotor.h"
 #include "VacuumMotor.h"
 #include "WheelMotor.h"
-
 #include "SensorArray.h"
 #include "BatteryMonitor.h"
-
 #include "ApiClient.h"
 #include "RobotController.h"
 #include "TimingSettings.h"
 
-// =====================================================
-// GLOBAL OBJECTS
-// =====================================================
-
+// Global Objects
 BrushMotor brush;
 VacuumMotor vacuum;
 WheelMotor wheels;
-
 SensorArray sensors;
 BatteryMonitor battery;
-
 ApiClient api;
 RobotController robot;
 TimingSettings timing;
 
-// =====================================================
-// SETUP
-// =====================================================
-
 void setup() {
+  Serial.begin(115200);
+  Serial.println("=== Vacuum Robot ESP32 Starting ===");
 
-    Serial.begin(115200);
+  // Initialize Hardware
+  brush.begin();     // Motor Sapu (OUT1 & OUT2)
+  vacuum.begin();    // Motor Vakum (OUT3 & OUT4)
+  wheels.begin();    // Motor Roda (L298N #2)
+  sensors.begin();
+  battery.begin();
 
-    Serial.println("\n=================================");
-    Serial.println(" VACUUM ROBOT ESP32 STARTING ");
-    Serial.println("=================================");
+  // Initialize Network
+  api.connectWiFi();
 
-    // =========================================
-    // HARDWARE INIT
-    // =========================================
+  // Load timing settings from NVS
+  timing.load();
 
   // Apply NVS wheel speeds to motors (overrides config.h defaults)
   wheels.setLeftSpeed(timing.leftWheelSpeed);
@@ -51,9 +43,8 @@ void setup() {
   // Start Direct HTTP Server (receives commands from browser)
   api.startWebServer();
 
-    sensors.begin();
-    battery.begin();
-    timing.load();
+  // Register device IP with Laravel server
+  api.registerDevice();
 
   // Initialize Logic
   robot.begin();

@@ -360,8 +360,10 @@ void ApiClient::_handleCommand() {
     
     server.send(200, "application/json", response);
     
-    // Log to Laravel server asynchronously
-    logCommandToServer(command, "success", 0);
+    // NOTE: Command logging to Laravel is handled by the browser (main.blade.php)
+    // which already sends POST /command-log with response_time_ms.
+    // Do NOT call logCommandToServer() here — it blocks the handler return
+    // and delays motor start by 1-2 seconds.
 }
 
 void ApiClient::_handleStatus() {
@@ -385,9 +387,9 @@ void ApiClient::_handleDiagnostic() {
     _addCorsHeaders();
     
     // Read raw digital values from all 6 sensors
-    int obsL = digitalRead(PIN_OB_LEFT);
-    int obsF = digitalRead(PIN_OB_FRONT);
-    int obsR = digitalRead(PIN_OB_RIGHT);
+    int obsL = digitalRead(PIN_IR_LEFT);
+    int obsF = digitalRead(PIN_IR_FRONT);
+    int obsR = digitalRead(PIN_IR_RIGHT);
     int clfL = digitalRead(PIN_CLIFF_LEFT);
     int clfF = digitalRead(PIN_CLIFF_FRONT);
     int clfR = digitalRead(PIN_CLIFF_RIGHT);
@@ -594,6 +596,7 @@ void ApiClient::logCommandToServer(String command, String status, int responseMs
     
     http.begin(url);
     http.addHeader("Content-Type", "application/json");
+    http.setTimeout(1500);  // Non-critical logging: don't block more than 1.5s
     
     DynamicJsonDocument doc(256);
     doc["command"] = command;
@@ -789,6 +792,7 @@ void ApiClient::sendBattery(int percent, float voltage) {
     
     http.begin(url);
     http.addHeader("Content-Type", "application/json");
+    http.setTimeout(1500);  // Don't block motor control for battery reporting
     
     DynamicJsonDocument doc(200);
     doc["battery_percent"] = percent;
@@ -819,6 +823,7 @@ void ApiClient::sendBatteryEvent(String event, int percent, float voltage) {
     
     http.begin(url);
     http.addHeader("Content-Type", "application/json");
+    http.setTimeout(1500);  // Don't block motor control for event logging
     
     DynamicJsonDocument doc(256);
     doc["event"] = event;
@@ -861,6 +866,7 @@ void ApiClient::sendAutoStop(int percent, float voltage) {
     
     http.begin(url);
     http.addHeader("Content-Type", "application/json");
+    http.setTimeout(1500);  // Don't block for non-critical logging
     
     DynamicJsonDocument doc(256);
     doc["command"] = "auto_stop_low_battery";

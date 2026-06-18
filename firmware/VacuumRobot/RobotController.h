@@ -2,32 +2,32 @@
 #define ROBOT_CONTROLLER_H
 
 #include <Arduino.h>
+#include "CleaningAlgorithm.h"
 
 class RobotController {
 public:
-
     void begin();
-    void update();
+    void update(); // Main logic loop
 
 private:
-
-    // Main Mode
-    void handleCleaning();
-
-    // Utility
     void stopAll();
-
-    // Anti-loop
-    unsigned long _loopStartTime = 0;
-    bool _escapeMode    = false;
-    bool _escapeToggle  = false; // alternating: false=kiri, true=kanan
-
-    // Battery
+    void handleCleaning();
+    void handleReturning();
+    void checkSafety();
+    
     unsigned long _lastBatteryCheck = 0;
-
-    // Debug
-    String _prevState    = "";
-    int _prevPowerValue  = -1;
+    
+    // For change detection and logging
+    String _prevState = "";
+    int _prevPowerValue = 0;
+    
+    // Autonomous cleaning algorithm
+    CleaningAlgorithm _cleaner;
+    bool _wasAutonomous = false;
+    
+    // Battery protection state
+    bool _lowBatteryWarned = false;   // True once low battery warning sent
+    bool _autoStopped = false;        // True once auto-stopped for low battery
 };
 
 #endif

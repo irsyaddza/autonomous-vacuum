@@ -1,23 +1,20 @@
 #include "WheelMotor.h"
 #include "config.h"
 
-// PWM CONFIG
-const int WHEEL_PWM_FREQ = 5000;
-const int WHEEL_PWM_RESOLUTION = 8;
+// PWM Configuration for ESP32 LEDC
+const int WHEEL_PWM_FREQ = 5000;      // 5kHz
+const int WHEEL_PWM_RESOLUTION = 8;   // 8-bit (0-255)
 
 void WheelMotor::begin() {
-
-    // Setup pin
+    // Setup all wheel motor pins
     pinMode(PIN_WHEEL_LEFT_FWD, OUTPUT);
     pinMode(PIN_WHEEL_LEFT_REV, OUTPUT);
-
     pinMode(PIN_WHEEL_RIGHT_FWD, OUTPUT);
     pinMode(PIN_WHEEL_RIGHT_REV, OUTPUT);
-
-    // Attach PWM
+    
+    // Setup LEDC PWM for ESP32 - all 4 pins
     ledcAttach(PIN_WHEEL_LEFT_FWD, WHEEL_PWM_FREQ, WHEEL_PWM_RESOLUTION);
     ledcAttach(PIN_WHEEL_LEFT_REV, WHEEL_PWM_FREQ, WHEEL_PWM_RESOLUTION);
-
     ledcAttach(PIN_WHEEL_RIGHT_FWD, WHEEL_PWM_FREQ, WHEEL_PWM_RESOLUTION);
     ledcAttach(PIN_WHEEL_RIGHT_REV, WHEEL_PWM_FREQ, WHEEL_PWM_RESOLUTION);
     
@@ -84,86 +81,37 @@ void WheelMotor::setRightSpeed(int pwm) {
     Serial.println(_rightSpeed);
 }
 
-// =====================================================
-// FORWARD
-// =====================================================
-
 void WheelMotor::moveForward() {
-    // Kedua motor maju (independent speed)
     ledcWrite(PIN_WHEEL_LEFT_FWD, _leftSpeed);
     ledcWrite(PIN_WHEEL_LEFT_REV, 0);
     ledcWrite(PIN_WHEEL_RIGHT_FWD, _rightSpeed);
     ledcWrite(PIN_WHEEL_RIGHT_REV, 0);
-    
-    Serial.print("[WHEEL] Moving FORWARD @ L:");
-    Serial.print(_leftSpeed);
-    Serial.print(" R:");
-    Serial.println(_rightSpeed);
 }
-
-// =====================================================
-// BACKWARD
-// =====================================================
 
 void WheelMotor::moveBackward() {
-    // Kedua motor mundur (independent speed)
     ledcWrite(PIN_WHEEL_LEFT_FWD, 0);
     ledcWrite(PIN_WHEEL_LEFT_REV, _leftSpeed);
     ledcWrite(PIN_WHEEL_RIGHT_FWD, 0);
     ledcWrite(PIN_WHEEL_RIGHT_REV, _rightSpeed);
-    
-    Serial.print("[WHEEL] Moving BACKWARD @ L:");
-    Serial.print(_leftSpeed);
-    Serial.print(" R:");
-    Serial.println(_rightSpeed);
 }
 
-// =====================================================
-// TURN LEFT
-// =====================================================
-
 void WheelMotor::turnLeft() {
-
     ledcWrite(PIN_WHEEL_LEFT_FWD, 0);
     ledcWrite(PIN_WHEEL_LEFT_REV, _leftSpeed);
     ledcWrite(PIN_WHEEL_RIGHT_FWD, _rightSpeed);
     ledcWrite(PIN_WHEEL_RIGHT_REV, 0);
-    
-    Serial.print("[WHEEL] Turning LEFT @ L:");
-    Serial.print(_leftSpeed);
-    Serial.print(" R:");
-    Serial.println(_rightSpeed);
 }
-
-// =====================================================
-// TURN RIGHT
-// =====================================================
 
 void WheelMotor::turnRight() {
-    // Roda kiri maju, roda kanan mundur (belok kanan di tempat)
     ledcWrite(PIN_WHEEL_LEFT_FWD, _leftSpeed);
     ledcWrite(PIN_WHEEL_LEFT_REV, 0);
-
     ledcWrite(PIN_WHEEL_RIGHT_FWD, 0);
     ledcWrite(PIN_WHEEL_RIGHT_REV, _rightSpeed);
-    
-    Serial.print("[WHEEL] Turning RIGHT @ L:");
-    Serial.print(_leftSpeed);
-    Serial.print(" R:");
-    Serial.println(_rightSpeed);
 }
 
-// =====================================================
-// STOP
-// =====================================================
-
 void WheelMotor::stop() {
-
     ledcWrite(PIN_WHEEL_LEFT_FWD, 0);
     ledcWrite(PIN_WHEEL_LEFT_REV, 0);
-
     ledcWrite(PIN_WHEEL_RIGHT_FWD, 0);
     ledcWrite(PIN_WHEEL_RIGHT_REV, 0);
-
-    Serial.println("[WHEEL] STOP");
 }
