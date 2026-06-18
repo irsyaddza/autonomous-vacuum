@@ -53,7 +53,7 @@
 
 // ===== DIRECT HTTP SERVER CONFIG =====
 #define ESP32_HTTP_PORT     80      // Port for receiving direct commands from browser
-#define FIRMWARE_VERSION    "2.2.5" // Firmware version for device registration
+#define FIRMWARE_VERSION    "2.2.6" // Firmware version for device registration
 
 // ===== MAIN LOOP TIMING =====
 #define ACTIVE_LOOP_DELAY   10      // ms - delay loop saat robot aktif (working)
