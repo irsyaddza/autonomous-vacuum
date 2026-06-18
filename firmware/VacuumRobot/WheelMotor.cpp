@@ -82,55 +82,31 @@ void WheelMotor::setRightSpeed(int pwm) {
 }
 
 void WheelMotor::moveForward() {
-    // Kedua motor maju (independent speed)
     ledcWrite(PIN_WHEEL_LEFT_FWD, _leftSpeed);
     ledcWrite(PIN_WHEEL_LEFT_REV, 0);
     ledcWrite(PIN_WHEEL_RIGHT_FWD, _rightSpeed);
     ledcWrite(PIN_WHEEL_RIGHT_REV, 0);
-    
-    Serial.print("[WHEEL] Moving FORWARD @ L:");
-    Serial.print(_leftSpeed);
-    Serial.print(" R:");
-    Serial.println(_rightSpeed);
 }
 
 void WheelMotor::moveBackward() {
-    // Kedua motor mundur (independent speed)
     ledcWrite(PIN_WHEEL_LEFT_FWD, 0);
     ledcWrite(PIN_WHEEL_LEFT_REV, _leftSpeed);
     ledcWrite(PIN_WHEEL_RIGHT_FWD, 0);
     ledcWrite(PIN_WHEEL_RIGHT_REV, _rightSpeed);
-    
-    Serial.print("[WHEEL] Moving BACKWARD @ L:");
-    Serial.print(_leftSpeed);
-    Serial.print(" R:");
-    Serial.println(_rightSpeed);
 }
 
 void WheelMotor::turnLeft() {
-    // Roda kiri mundur, roda kanan maju (belok kiri di tempat)
     ledcWrite(PIN_WHEEL_LEFT_FWD, 0);
     ledcWrite(PIN_WHEEL_LEFT_REV, _leftSpeed);
     ledcWrite(PIN_WHEEL_RIGHT_FWD, _rightSpeed);
     ledcWrite(PIN_WHEEL_RIGHT_REV, 0);
-    
-    Serial.print("[WHEEL] Turning LEFT @ L:");
-    Serial.print(_leftSpeed);
-    Serial.print(" R:");
-    Serial.println(_rightSpeed);
 }
 
 void WheelMotor::turnRight() {
-    // Roda kiri maju, roda kanan mundur (belok kanan di tempat)
     ledcWrite(PIN_WHEEL_LEFT_FWD, _leftSpeed);
     ledcWrite(PIN_WHEEL_LEFT_REV, 0);
     ledcWrite(PIN_WHEEL_RIGHT_FWD, 0);
     ledcWrite(PIN_WHEEL_RIGHT_REV, _rightSpeed);
-    
-    Serial.print("[WHEEL] Turning RIGHT @ L:");
-    Serial.print(_leftSpeed);
-    Serial.print(" R:");
-    Serial.println(_rightSpeed);
 }
 
 void WheelMotor::stop() {
@@ -138,6 +114,4 @@ void WheelMotor::stop() {
     ledcWrite(PIN_WHEEL_LEFT_REV, 0);
     ledcWrite(PIN_WHEEL_RIGHT_FWD, 0);
     ledcWrite(PIN_WHEEL_RIGHT_REV, 0);
-    
-    Serial.println("[WHEEL] All wheels STOPPED");
 }
