@@ -1,4 +1,75 @@
 <x-master>
+    <style>
+        /* Toast notification popup styling */
+        #notification-container {
+            position: fixed;
+            top: 24px;
+            right: 24px;
+            z-index: 9999;
+            max-width: 400px;
+            width: calc(100% - 48px);
+            pointer-events: none;
+        }
+        #notification-container .alert {
+            pointer-events: auto;
+            margin-bottom: 12px;
+            border-left: 4px solid;
+            background: rgba(21, 30, 48, 0.95);
+            backdrop-filter: blur(8px);
+            border-radius: 12px;
+            box-shadow: var(--shadow-lg);
+            animation: slideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            position: relative;
+        }
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(100px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+        @media (max-width: 576px) {
+            #notification-container {
+                top: 16px;
+                right: 16px;
+                left: 16px;
+                width: calc(100% - 32px);
+                max-width: none;
+            }
+            @keyframes slideIn {
+                from {
+                    opacity: 0;
+                    transform: translateY(-50px);
+                }
+                to {
+                    opacity: 1;
+                    transform: translateY(0);
+                }
+            }
+        }
+
+        /* Command History list styling */
+        .history-table-container {
+            max-height: 275px;
+            overflow-y: auto;
+            position: relative;
+        }
+        .history-mobile-container {
+            max-height: 320px;
+            overflow-y: auto;
+        }
+        /* Style for smooth rotation of collapse icon */
+        .collapse-icon {
+            transition: transform 0.2s ease-in-out;
+        }
+        [aria-expanded="false"] .collapse-icon {
+            transform: rotate(180deg);
+        }
+    </style>
+
     <!-- Header Section (Desktop) -->
     <div class="d-none d-md-flex align-items-center justify-content-between mb-5 stagger-1">
         <div>
@@ -19,7 +90,7 @@
     </div>
 
     <!-- Notification Container -->
-    <div id="notification-container" class="mb-4"></div>
+    <div id="notification-container"></div>
 
     <!-- Stats Cards -->
     <div class="row g-4 mb-4 stagger-2">
@@ -164,42 +235,47 @@
                         <button class="btn btn-sm btn-outline-secondary border-0" onclick="fetchCommandLogs()" title="Refresh" id="cmdLogRefreshBtn" style="border-radius: 6px;">
                             <i class="fas fa-sync-alt"></i>
                         </button>
+                        <button class="btn btn-sm btn-outline-secondary border-0" data-bs-toggle="collapse" data-bs-target="#cmdHistoryCollapse" aria-expanded="true" aria-controls="cmdHistoryCollapse" title="Minimize" style="border-radius: 6px;">
+                            <i class="fas fa-chevron-up collapse-icon"></i>
+                        </button>
                     </div>
                 </div>
-                <div class="card-body p-0">
-                    <!-- Desktop Table View -->
-                    <div class="table-responsive d-none d-md-block">
-                        <table class="table table-dark table-hover mb-0 align-middle" style="background: transparent;">
-                            <thead>
-                                <tr style="border-bottom: 1px solid rgba(255,255,255,0.06);">
-                                    <th class="ps-4 py-3 text-secondary text-uppercase fw-semibold" style="font-size: 0.68rem; letter-spacing: 0.1em;">Command</th>
-                                    <th class="py-3 text-secondary text-uppercase fw-semibold" style="font-size: 0.68rem; letter-spacing: 0.1em;">Source</th>
-                                    <th class="py-3 text-secondary text-uppercase fw-semibold" style="font-size: 0.68rem; letter-spacing: 0.1em;">Status</th>
-                                    <th class="py-3 text-secondary text-uppercase fw-semibold" style="font-size: 0.68rem; letter-spacing: 0.1em;">Response</th>
-                                    <th class="pe-4 py-3 text-secondary text-uppercase text-end fw-semibold" style="font-size: 0.68rem; letter-spacing: 0.1em;">Time</th>
-                                </tr>
-                            </thead>
-                            <tbody id="cmdLogTableBody">
-                                <tr>
-                                    <td colspan="5" class="text-center text-secondary py-4">
-                                        <i class="fas fa-spinner fa-spin me-2"></i>Loading command history...
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-
-                    <!-- Mobile Card View -->
-                    <div class="d-md-none" id="cmdLogMobileList">
-                        <div class="text-center text-secondary py-4">
-                            <i class="fas fa-spinner fa-spin me-2"></i>Loading...
+                <div class="collapse show" id="cmdHistoryCollapse">
+                    <div class="card-body p-0">
+                        <!-- Desktop Table View -->
+                        <div class="table-responsive d-none d-md-block history-table-container">
+                            <table class="table table-dark table-hover mb-0 align-middle" style="background: transparent;">
+                                <thead>
+                                    <tr style="border-bottom: 1px solid rgba(255,255,255,0.06);">
+                                        <th class="ps-4 py-3 text-secondary text-uppercase fw-semibold" style="font-size: 0.68rem; letter-spacing: 0.1em;">Command</th>
+                                        <th class="py-3 text-secondary text-uppercase fw-semibold" style="font-size: 0.68rem; letter-spacing: 0.1em;">Source</th>
+                                        <th class="py-3 text-secondary text-uppercase fw-semibold" style="font-size: 0.68rem; letter-spacing: 0.1em;">Status</th>
+                                        <th class="py-3 text-secondary text-uppercase fw-semibold" style="font-size: 0.68rem; letter-spacing: 0.1em;">Response</th>
+                                        <th class="pe-4 py-3 text-secondary text-uppercase text-end fw-semibold" style="font-size: 0.68rem; letter-spacing: 0.1em;">Time</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="cmdLogTableBody">
+                                    <tr>
+                                        <td colspan="5" class="text-center text-secondary py-4">
+                                            <i class="fas fa-spinner fa-spin me-2"></i>Loading command history...
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
                         </div>
-                    </div>
 
-                    <!-- Empty State -->
-                    <div class="text-center py-5 d-none" id="cmdLogEmpty">
-                        <i class="fas fa-inbox fa-3x text-secondary mb-3" style="opacity: 0.25;"></i>
-                        <p class="text-secondary mb-0 fw-medium">No commands recorded yet</p>
+                        <!-- Mobile Card View -->
+                        <div class="d-md-none history-mobile-container" id="cmdLogMobileList">
+                            <div class="text-center text-secondary py-4">
+                                <i class="fas fa-spinner fa-spin me-2"></i>Loading...
+                            </div>
+                        </div>
+
+                        <!-- Empty State -->
+                        <div class="text-center py-5 d-none" id="cmdLogEmpty">
+                            <i class="fas fa-inbox fa-3x text-secondary mb-3" style="opacity: 0.25;"></i>
+                            <p class="text-secondary mb-0 fw-medium">No commands recorded yet</p>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -620,23 +696,8 @@
                 .catch(() => icon.classList.remove('spin'));
         }
 
-        // ===== MOBILE CLOCK =====
-        function updateMobileClock() {
-            const now = new Date();
-            const timeEl = document.getElementById('mobile-clock-time');
-            const dateEl = document.getElementById('mobile-clock-date');
-            if (timeEl) {
-                timeEl.textContent = now.toLocaleTimeString('en-US', { hour12: false });
-            }
-            if (dateEl) {
-                dateEl.textContent = now.toLocaleDateString('en-US', {
-                    weekday: 'long', year: 'numeric', month: 'short', day: 'numeric'
-                });
-            }
-        }
-
         // ===== INITIALIZATION =====
-        let statusInterval, batteryEventInterval, cmdLogInterval, clockInterval;
+        let statusInterval, batteryEventInterval, cmdLogInterval;
         let isTabVisible = true;
 
         document.addEventListener('DOMContentLoaded', async () => {
@@ -647,8 +708,6 @@
             batteryEventInterval = setInterval(fetchBatteryEvents, 10000);
             fetchCommandLogs();
             cmdLogInterval = setInterval(fetchCommandLogs, 15000);
-            updateMobileClock();
-            clockInterval = setInterval(updateMobileClock, 1000);
         });
 
         document.addEventListener('visibilitychange', () => {
@@ -678,7 +737,6 @@
             clearInterval(statusInterval);
             clearInterval(batteryEventInterval);
             clearInterval(cmdLogInterval);
-            clearInterval(clockInterval);
         });
     </script>
 </x-master>
