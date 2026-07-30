@@ -1,11 +1,11 @@
 <x-master>
     <!-- Header -->
-    <div class="d-flex align-items-center justify-content-between mb-4 stagger-1">
+    <div class="d-flex flex-column flex-sm-row align-items-start align-items-sm-center justify-content-between gap-3 mb-4 stagger-1">
         <div>
             <p class="text-secondary mb-1 small fw-medium tracking-wide text-uppercase" style="font-size: 0.72rem; color: var(--accent);">Live monitoring</p>
             <h1 class="h2 mb-0 fw-bold" style="letter-spacing: -0.025em;">Sensor diagnostic</h1>
         </div>
-        <div class="d-flex align-items-center gap-3">
+        <div class="d-flex align-items-center gap-2">
             <span class="badge rounded-pill px-3 py-2" style="background: var(--card-bg); border: 1px solid var(--surface-border); font-weight: 500; font-size: 0.78rem;" id="connectionBadge">
                 <i class="fas fa-circle me-1" style="font-size: 0.5rem; color: var(--danger);" id="connectionDot"></i>
                 <span id="connectionText" class="fw-medium">Disconnected</span>
@@ -185,17 +185,19 @@
 
     <!-- Timing Settings Panel -->
     <div class="card mt-4 stagger-4">
-        <div class="card-header py-3 d-flex align-items-center justify-content-between">
-            <div class="d-flex align-items-center">
-                <i class="fas fa-sliders-h me-2" style="color: var(--accent);"></i>
-                <span class="fw-semibold text-white" style="font-size: 0.9rem;">Timing settings</span>
-                <small class="text-secondary ms-2 fw-medium">(live tuning without reflashing)</small>
+        <div class="card-header py-3 d-flex flex-column flex-md-row align-items-start align-items-md-center justify-content-between gap-3">
+            <div class="d-flex flex-column flex-sm-row align-items-start align-items-sm-center gap-1 gap-sm-2 w-100">
+                <div class="d-flex align-items-center">
+                    <i class="fas fa-sliders-h me-2" style="color: var(--accent);"></i>
+                    <span class="fw-semibold text-white" style="font-size: 0.9rem;">Timing settings</span>
+                </div>
+                <small class="text-secondary fw-medium" style="font-size: 0.78rem;">(live tuning without reflashing)</small>
             </div>
-            <div class="d-flex gap-2">
-                <button class="btn btn-sm btn-outline-secondary" onclick="resetTimingDefaults()" style="border-radius: 8px; font-weight: 500;">
+            <div class="d-flex gap-2 align-self-stretch align-self-md-auto justify-content-end">
+                <button class="btn btn-sm btn-outline-secondary px-3" onclick="resetTimingDefaults()" style="border-radius: 8px; font-weight: 500; height: 38px;">
                     <i class="fas fa-undo me-1"></i>Reset
                 </button>
-                <button class="btn btn-sm btn-primary" onclick="saveTimingSettings()" style="border-radius: 8px; font-weight: 500; background: var(--accent); border-color: var(--accent); color: var(--bg-dark);">
+                <button class="btn btn-sm btn-primary px-3" onclick="saveTimingSettings()" style="border-radius: 8px; font-weight: 500; background: var(--accent); border-color: var(--accent); color: var(--bg-dark); height: 38px; white-space: nowrap;">
                     <i class="fas fa-save me-1"></i>Save to ESP32
                 </button>
             </div>
